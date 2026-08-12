@@ -1,0 +1,59 @@
+# 依赖
+node_modules/
+.pnp
+.pnp.js
+
+# 构建输出
+dist/
+build/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+*.env
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 测试覆盖率
+coverage/
+.nyc_output/
+
+# 调试文件
+.dbg/
+.swc/
+.trae/
+
+# 临时文件
+*.bak
+*.tmp
+*.temp
+
+# 上传文件
+uploads/
+
+# SSL 证书
+*.pem
+*.key
+*.crt
+*.cert
+
+# Prisma
+prisma/migrations/**/migration_lock.toml

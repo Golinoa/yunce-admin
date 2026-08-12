@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRD 09 消课记录状态矩阵</title>
+  <style>
+    :root { --bg:#f5f7fb; --surface:#fff; --text:#1f2937; --muted:#5b6472; --line:#dbe4f0; --primary:#2563eb; --primary-soft:#eaf2ff; --success:#1f7a3d; --success-soft:#edf8f0; --warn:#b76a00; --warn-soft:#fff5e8; --danger:#b42318; --danger-soft:#fdecec; --shadow:0 14px 32px rgba(31,41,55,0.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:var(--text); background:linear-gradient(180deg,#eef4ff 0,var(--bg) 220px); }
+    a { color:inherit; text-decoration:none; }
+    .wrap { max-width:1440px; margin:0 auto; padding:24px 20px 48px; }
+    .topbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+    .nav-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,0.82); font-size:14px; box-shadow:var(--shadow); }
+    .hero { background:linear-gradient(135deg,#8c2f39 0,#e07a5f 100%); color:#fff; border-radius:24px; padding:28px; box-shadow:var(--shadow); }
+    .hero h1 { margin:0; font-size:32px; }
+    .hero p { margin:12px 0 0; max-width:1080px; font-size:15px; line-height:1.85; color:rgba(255,255,255,0.94); }
+    .section { margin-top:20px; background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:22px; box-shadow:var(--shadow); }
+    .section h2 { margin:0 0 10px; font-size:22px; }
+    .intro, th, td, .note, pre, .card p { color:var(--muted); font-size:14px; line-height:1.8; }
+    .grid { display:grid; gap:16px; }
+    .grid-2 { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+    .grid-3 { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+    .card { border:1px solid var(--line); border-radius:18px; padding:18px; background:#fff; }
+    .card h3 { margin:0 0 8px; font-size:17px; }
+    .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+    .tag { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .primary { background:var(--primary-soft); color:var(--primary); }
+    .success { background:var(--success-soft); color:var(--success); }
+    .warn { background:var(--warn-soft); color:var(--warn); }
+    .danger { background:var(--danger-soft); color:var(--danger); }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:16px; }
+    table { width:100%; min-width:1320px; border-collapse:collapse; background:#fff; }
+    th, td { padding:14px 16px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:#f7f9fc; color:#344054; font-weight:700; }
+    tr:last-child td { border-bottom:none; }
+    pre { margin:0; padding:16px; background:#0f172a; color:#dbeafe; border-radius:16px; overflow-x:auto; font-family:Consolas,monospace; }
+    .note { border:1px dashed #c7d2e5; border-radius:16px; padding:14px 16px; background:#f8fafc; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="nav-link" href="../index.html">PRD 首页</a>
+      <a class="nav-link" href="08-teacher-invite-bind.html">上一章：教师邀请码与绑定页</a>
+      <a class="nav-link" href="../../index.html">返回 PM 总览</a>
+    </div>
+
+    <section class="hero">
+      <h1>09 消课记录状态矩阵</h1>
+      <p>
+        本章专门沉淀消课记录在前端展示层的状态规则、角色展示规则和课包剩余课时表现。
+        目标不是描述“后台怎么存”，而是明确“列表卡片和详情应该怎样给用户看”，并同步标记当前前后端的数据缺口。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>1. 状态总览</h2>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="tag-row"><span class="tag success">记录状态</span></div>
+          <h3>normal / cancelled / makeup</h3>
+          <p>前端 `LessonRecord` 类型已明确支持 3 种显示状态，列表组件也已支持“已取消”“补课”标签。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag success">角色文案</span></div>
+          <h3>主讲 / 助教 / 操作</h3>
+          <p>前端已具备三角色展示文案拼装能力，但后端正式模型还未完整提供助教与操作人字段。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">课包预警</span></div>
+          <h3>正常 / 即将到期 / 需续费</h3>
+          <p>前端现有组件已实现“即将到期”“需续费”，正常状态表现为无标签，仅展示剩余课时和正常颜色。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. 列表展示 ASCII</h2>
+      <pre>个人消课
+  -> 正常消课
+     -> 仅展示主讲老师名
+     -> 若主讲 = 操作人，则不额外展示“操作”
+     -> 无状态标签
+
+个人消课（双老师）
+  -> 主讲 != 操作人
+     -> 展示：主讲 A · 操作 B
+     -> 无状态标签
+
+个人补课
+  -> 展示“补课”标签
+
+个人取消
+  -> 展示“已取消”标签
+
+班级消课
+  -> 展示：主讲 A · 助教 B · 操作 C
+  -> 若无助教或操作与主讲重复，则按去重规则省略
+
+课包剩余
+  -> >16：正常，无预警标签
+  -> 9-16：显示“即将到期”
+  -> <=8：显示“需续费”</pre>
+    </section>
+
+    <section class="section">
+      <h2>3. 列表展示 Mermaid</h2>
+      <pre>```mermaid
+flowchart TD
+    A[渲染消课记录] --> B{记录状态}
+    B -->|normal| C[无状态标签]
+    B -->|makeup| D[显示补课标签]
+    B -->|cancelled| E[显示已取消标签]
+    C --> F{角色关系}
+    D --> F
+    E --> F
+    F -->|仅主讲| G[显示教师姓名]
+    F -->|主讲+操作| H[显示主讲 A · 操作 B]
+    F -->|主讲+助教+操作| I[显示主讲 A · 助教 B · 操作 C]
+    G --> J{剩余课时}
+    H --> J
+    I --> J
+    J -->|>16| K[正常]
+    J -->|9-16| L[即将到期]
+    J -->|<=8| M[需续费]
+```</pre>
+    </section>
+
+    <section class="section">
+      <h2>4. 消课记录状态矩阵</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>场景</th>
+              <th>状态值</th>
+              <th>列表文案</th>
+              <th>教师角色展示</th>
+              <th>产品判断</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>个人消课：正常消课、主讲与操作人为同一人</td>
+              <td>`normal`</td>
+              <td>不显示状态标签</td>
+              <td>仅显示主讲老师姓名</td>
+              <td>这是最基础展示，不应重复显示“操作 某某”。</td>
+            </tr>
+            <tr>
+              <td>个人消课：主讲与操作人不同</td>
+              <td>`normal`</td>
+              <td>不显示状态标签</td>
+              <td>显示 `主讲 A · 操作 B`</td>
+              <td>用于验证双老师文案，强调“上课老师”和“实际操作人”不同。</td>
+            </tr>
+            <tr>
+              <td>个人补课</td>
+              <td>`makeup`</td>
+              <td>显示 `补课` 标签</td>
+              <td>角色展示遵循正常记录规则</td>
+              <td>补课是状态标签，不替代教师角色信息。</td>
+            </tr>
+            <tr>
+              <td>个人取消</td>
+              <td>`cancelled`</td>
+              <td>显示 `已取消` 标签</td>
+              <td>角色展示遵循正常记录规则</td>
+              <td>取消后仍要保留历史记录，不应在列表中消失。</td>
+            </tr>
+            <tr>
+              <td>班级消课</td>
+              <td>`normal / makeup / cancelled`</td>
+              <td>根据状态决定是否显示 `补课` / `已取消`</td>
+              <td>显示 `主讲 A · 助教 B · 操作 C`，按存在情况去重</td>
+              <td>这是班级记录和个人记录的最大展示差异。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>5. 课包剩余课时表现矩阵</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>剩余课时</th>
+              <th>展示状态</th>
+              <th>标签</th>
+              <th>颜色表现</th>
+              <th>依据</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>&gt; 16</td>
+              <td>正常</td>
+              <td>无标签</td>
+              <td>正常/成功色</td>
+              <td>前端 `LessonConsumptionList` 当前超过 16 不显示预警标签。</td>
+            </tr>
+            <tr>
+              <td>9 - 16</td>
+              <td>即将到期</td>
+              <td>`即将到期`</td>
+              <td>预警色</td>
+              <td>前端当前阈值：`remainingHours <= 16`。</td>
+            </tr>
+            <tr>
+              <td>&lt;= 8</td>
+              <td>需续费</td>
+              <td>`需续费`</td>
+              <td>危险色</td>
+              <td>前端当前阈值：`remainingHours <= 8`。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note" style="margin-top:14px;">
+        你的描述里是“正常 / 即将到期 / 需续费”三态，这与前端当前现成实现一致。产品口径上建议继续沿用这三态，不再额外引入第四种“课时不足”文案，避免和学生卡片状态系统混淆。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. 当前代码依据</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>模块</th>
+              <th>当前现状</th>
+              <th>PRD 结论</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>前端 `LessonRecord` 类型</td>
+              <td>已定义 `status?: 'normal' | 'cancelled' | 'makeup'`，并预留 `operator_teacher_id / assistant_teacher_id`</td>
+              <td>显示层口径已经具备，可直接作为 UI 规格依据。</td>
+            </tr>
+            <tr>
+              <td>`LessonConsumptionList` 组件</td>
+              <td>已支持 `已取消`、`补课`、`即将到期`、`需续费` 标签；已支持三角色文案拼装</td>
+              <td>这是当前最直接的展示依据。</td>
+            </tr>
+            <tr>
+              <td>前端 student service mock 映射</td>
+              <td>已将 `makeup / cancelled / normal` 映射为列表可读状态，并填充 teacher/operator/assistant 展示字段</td>
+              <td>Mock 场景已可覆盖你要求的展示矩阵。</td>
+            </tr>
+            <tr>
+              <td>后端 Prisma `LessonRecord`</td>
+              <td>已支持 `LessonStatus = NORMAL / CANCELLED / MAKEUP`</td>
+              <td>后端状态值与前端三态是一致的。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. 当前缺口与待补齐点</h2>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="tag-row"><span class="tag danger">后端缺口</span></div>
+          <h3>三角色字段未完整落表</h3>
+          <p>
+            前端类型里已经有 `operator_teacher_id`、`assistant_teacher_id`，但当前后端 `LessonRecord` Prisma 模型中还未看到对应字段。
+            这意味着“班级消课三角色同时展示”目前更像前端展示预留，而不是完整的真实接口能力。
+          </p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">联调缺口</span></div>
+          <h3>双老师与三角色案例需补真数据</h3>
+          <p>
+            目前双老师、班级三角色、补课/取消的展示案例，在前端 mock 数据里能覆盖；
+            但如果要作为正式联调验收项，后端必须补齐对应字段和接口返回。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>8. 验收标准</h2>
+      <div class="note">
+        1. 个人正常消课且主讲与操作人为同一人时，只显示一个教师名。<br />
+        2. 个人正常消课且主讲与操作人不同，显示 `主讲 A · 操作 B`。<br />
+        3. 个人补课必须显示 `补课` 标签。<br />
+        4. 个人取消必须显示 `已取消` 标签。<br />
+        5. 班级消课在三角色都存在时，必须同时显示 `主讲 + 助教 + 操作`。<br />
+        6. 剩余课时必须稳定覆盖 `正常 / 即将到期 / 需续费` 三种表现。<br />
+        7. 正式联调版本若无法返回操作人和助教字段，必须在 spec 中显式标注为后端缺口，不得假装已完成。
+      </div>
+    </section>
+  </div>
+</body>
+</html>

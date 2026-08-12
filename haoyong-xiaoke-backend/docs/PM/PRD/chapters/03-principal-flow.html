@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRD 03 校长主链路</title>
+  <style>
+    :root { --bg:#f5f7fb; --surface:#fff; --text:#1f2937; --muted:#5b6472; --line:#dbe4f0; --primary:#2563eb; --primary-soft:#eaf2ff; --success:#1f7a3d; --success-soft:#edf8f0; --warn:#b76a00; --warn-soft:#fff5e8; --shadow:0 14px 32px rgba(31,41,55,0.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:var(--text); background:linear-gradient(180deg,#eef4ff 0,var(--bg) 220px); }
+    a { color:inherit; text-decoration:none; }
+    .wrap { max-width:1360px; margin:0 auto; padding:24px 20px 48px; }
+    .topbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+    .nav-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,0.82); font-size:14px; box-shadow:var(--shadow); }
+    .hero { background:linear-gradient(135deg,#0f5a8a 0,#2b8ad6 100%); color:#fff; border-radius:24px; padding:28px; box-shadow:var(--shadow); }
+    .hero h1 { margin:0; font-size:32px; }
+    .hero p { margin:12px 0 0; max-width:1000px; font-size:15px; line-height:1.85; color:rgba(255,255,255,0.94); }
+    .section { margin-top:20px; background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:22px; box-shadow:var(--shadow); }
+    .section h2 { margin:0 0 10px; font-size:22px; }
+    .intro, th, td, .note, pre, .card p, .card li { color:var(--muted); font-size:14px; line-height:1.8; }
+    .grid { display:grid; gap:16px; }
+    .grid-2 { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+    .grid-3 { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+    .card { border:1px solid var(--line); border-radius:18px; padding:18px; background:#fff; }
+    .card h3 { margin:0 0 8px; font-size:17px; }
+    .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+    .tag { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .success { background:var(--success-soft); color:var(--success); }
+    .warn { background:var(--warn-soft); color:var(--warn); }
+    .primary { background:var(--primary-soft); color:var(--primary); }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:16px; }
+    table { width:100%; min-width:1180px; border-collapse:collapse; background:#fff; }
+    th, td { padding:14px 16px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:#f7f9fc; color:#344054; font-weight:700; }
+    tr:last-child td { border-bottom:none; }
+    pre { margin:0; padding:16px; background:#0f172a; color:#dbeafe; border-radius:16px; overflow-x:auto; font-family:Consolas,monospace; }
+    .note { border:1px dashed #c7d2e5; border-radius:16px; padding:14px 16px; background:#f8fafc; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="nav-link" href="../index.html">PRD 首页</a>
+      <a class="nav-link" href="02-navigation-state.html">上一章：导航与状态机</a>
+      <a class="nav-link" href="04-teacher-student-flow.html">下一章：教师与学员链路</a>
+    </div>
+
+    <section class="hero">
+      <h1>03 校长主链路</h1>
+      <p>
+        本章描述校长的真实首链路。根据当前产品决策，校长不是“登录后再分多步建机构和校区”，而是
+        `检测登录态 -> 微信一键登录 -> 选择身份 -> 选择校长 -> 填写机构名称 -> 创建机构 -> 系统自动创建同名默认主校区 -> 进入首页`。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>1. 校长主链路目标</h2>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="tag-row"><span class="tag success">目标 1</span></div>
+          <h3>完成机构创建</h3>
+          <p>校长首次注册/完善身份后，只需填写机构名称即可完成组织初始化，不做多表单拆分。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag success">目标 2</span></div>
+          <h3>自动生成主校区</h3>
+          <p>首个主校区不由校长手工填写，而是系统在创建机构时自动生成，名称默认与机构同名。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag success">目标 3</span></div>
+          <h3>发起教师邀请</h3>
+          <p>校长进入首页后，再从首页或设置页发起教师邀请，而不是把邀请动作塞进首次注册链路。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. 校长主链路 ASCII</h2>
+      <pre>用户打开小程序
+  -> 检测登录状态
+     -> 有有效登录态：直接进入首页
+     -> 无有效登录态：进入登录页
+         -> 选择微信一键登录
+         -> 首次进入注册流程
+             -> 选择身份
+             -> 选择校长
+             -> 填写机构名称
+             -> 提交创建机构
+             -> 系统自动创建默认主校区（名称 = 机构名称）
+             -> 进入首页
+
+校长进入首页后
+  -> 从首页或设置页进入教师邀请
+  -> 生成临时邀请码
+  -> 分享给教师</pre>
+    </section>
+
+    <section class="section">
+      <h2>3. 校长主链路 Mermaid</h2>
+      <pre>```mermaid
+flowchart TD
+    A[打开小程序] --> B{是否有有效登录态}
+    B -->|有| C[直接进入首页]
+    B -->|无| D[登录页]
+    D --> E[微信一键登录]
+    E --> F{是否已有身份}
+    F -->|无| G[身份选择页]
+    G --> H[选择校长]
+    H --> I[填写机构名称]
+    I --> J[创建机构]
+    J --> K[系统自动创建默认主校区]
+    K --> C
+    F -->|有校长身份| C
+    C --> L[教师邀请页]
+```</pre>
+    </section>
+
+    <section class="section">
+      <h2>4. 页面级交互设计</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>页面</th>
+              <th>用户从哪里进入</th>
+              <th>要填写什么</th>
+              <th>成功后去哪里</th>
+              <th>需要后端支持</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>登录页</td>
+              <td>无有效登录态时自动进入</td>
+              <td>无需手填账号，点击微信一键登录</td>
+              <td>身份选择页 / 直接首页</td>
+              <td>微信登录、会话创建接口</td>
+            </tr>
+            <tr>
+              <td>角色信息页（校长）</td>
+              <td>选择校长身份后进入</td>
+              <td>仅填写机构名称</td>
+              <td>创建机构并直接进入首页</td>
+              <td>角色完善接口、机构创建接口、默认主校区自动创建逻辑</td>
+            </tr>
+            <tr>
+              <td>教师邀请页</td>
+              <td>首页或设置页进入</td>
+              <td>邀请码有效期：30 分钟 / 1 小时 / 3 小时 / 12 小时</td>
+              <td>留在本页查看状态，或回到首页</td>
+              <td>邀请码生成、校验、失效、消费接口</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>5. 当前前端可复用能力</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>能力</th>
+              <th>现状</th>
+              <th>PRD 判断</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>首页金刚区</td>
+              <td>已存在，适合已初始化用户继续进入业务页</td>
+              <td>适合作为校长完成注册后的首个工作台，不适合放在注册前</td>
+            </tr>
+            <tr>
+              <td>角色信息页</td>
+              <td>当前校长角色信息页已有机构名称、地址、负责人手机号输入能力</td>
+              <td>可直接收缩成“只填机构名称”的 MVP 版本，作为首链路关键页</td>
+            </tr>
+            <tr>
+              <td>校区设置首页</td>
+              <td>已支持机构名称、分校区管理、发薪日、科目、节假日等入口</td>
+              <td>更适合作为首页后的管理页，不作为首链路中的手工建校区页</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. 当前缺口</h2>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">缺口</span></div>
+          <h3>校长角色信息页过重</h3>
+          <p>当前校长页包含机构地址、负责人手机号等字段，但你的真实链路只需要机构名称，需要明确收缩。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">缺口</span></div>
+          <h3>默认主校区自动创建规则未落地</h3>
+          <p>当前 PRD 之前错误地把“创建校区页”放进了首链路，实际应改为系统自动创建默认主校区。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. 本章结论</h2>
+      <div class="note">
+        1. 校长首链路应收敛成“微信登录 -> 选校长 -> 填机构名 -> 自动建默认主校区 -> 首页”。<br />
+        2. 手工创建校区不在首链路里，而是在首页后的管理动作。<br />
+        3. 首链路的关键 spec 应改为：登录状态判断、微信登录、角色选择、校长角色信息、默认主校区自动创建。<br />
+        4. 下一章进入教师与学员链路，重点写清“添加学员”的页面和接口关系。
+      </div>
+    </section>
+  </div>
+</body>
+</html>

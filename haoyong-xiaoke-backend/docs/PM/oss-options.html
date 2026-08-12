@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>松果助教开源接入选项</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --line: #dbe4f0;
+      --primary: #2563eb;
+      --primary-soft: #eaf2ff;
+      --success: #1f7a3d;
+      --success-soft: #edf8f0;
+      --warn: #b76a00;
+      --warn-soft: #fff5e8;
+      --danger: #b42318;
+      --danger-soft: #fdecec;
+      --shadow: 0 14px 32px rgba(31, 41, 55, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #eef4ff 0, var(--bg) 220px);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--text);
+      font-size: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0f5a8a 0, #2b8ad6 100%);
+      color: #fff;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 32px;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      max-width: 980px;
+      font-size: 15px;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.94);
+    }
+
+    .section {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .section .intro,
+    .card p,
+    .card li,
+    th,
+    td,
+    .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .success { background: var(--success-soft); color: var(--success); }
+    .warn { background: var(--warn-soft); color: var(--warn); }
+    .danger { background: var(--danger-soft); color: var(--danger); }
+    .primary { background: var(--primary-soft); color: var(--primary); }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1100px;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f7f9fc;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .note {
+      border: 1px dashed #c7d2e5;
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: #f8fafc;
+    }
+
+    .ext {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    @media (max-width: 720px) {
+      .wrap {
+        padding: 14px 12px 36px;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero h1 {
+        font-size: 28px;
+      }
+
+      .section {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="back" href="index.html">返回 PM 总览首页</a>
+    </div>
+
+    <section class="hero">
+      <h1>开源接入选项</h1>
+      <p>
+        当前阶段适合考虑的开源方案，必须满足两个条件：第一，能补你现在真正缺的能力；第二，不会反向拖慢 MVP 上线。
+        所以这里不追求“大而全”，只保留当前阶段最值得考虑的几个方向。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>先说结论</h2>
+      <p class="intro">
+        现在最值得看的不是“更多后台模板”，而是“更快获得数据和反馈”。所以优先级建议是：先看统计分析，再看反馈问卷，最后才考虑补内部工具。
+      </p>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="tag-row"><span class="tag success">推荐先看</span></div>
+          <h3>Umami</h3>
+          <p>适合官网、帮助页、运营落地页的访问数据分析。轻、快、自托管门槛低，对 1 人团队友好。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">二期考虑</span></div>
+          <h3>Formbricks</h3>
+          <p>适合补用户问卷、流失反馈、满意度回访。更像“反馈系统”，不适合在本版上线前抢资源。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag primary">按需补位</span></div>
+          <h3>Appsmith</h3>
+          <p>适合快速补一个内部运营工具，不建议替换你已经在做的后台管理系统。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>开源方案对比</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>方案</th>
+              <th>适合补什么</th>
+              <th>为什么适合你现在</th>
+              <th>接入时机</th>
+              <th>许可 / 部署</th>
+              <th>建议</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>Umami</strong><br />
+                <a class="ext" href="https://github.com/umami-software/umami">GitHub</a>
+              </td>
+              <td>官网、活动页、帮助页、落地页访问统计</td>
+              <td>你后续要做免费版增长和广告变现，先把访问分析搭起来最划算；对比复杂产品分析方案更轻。</td>
+              <td>可在 MVP 上线后立即接入</td>
+              <td>MIT，支持自托管</td>
+              <td><span class="tag success">推荐</span></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Formbricks</strong><br />
+                <a class="ext" href="https://github.com/formbricks/formbricks">GitHub</a>
+              </td>
+              <td>用户问卷、功能反馈、NPS、流失原因收集</td>
+              <td>你后面会有免费用户、会员用户和校长 / 教师分层，反馈系统会比继续拍脑袋加需求更有价值。</td>
+              <td>建议放在 MVP 稳定后</td>
+              <td>核心为 AGPLv3，支持自托管</td>
+              <td><span class="tag warn">二期</span></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Appsmith</strong><br />
+                <a class="ext" href="https://github.com/appsmithorg/appsmith">GitHub</a>
+              </td>
+              <td>临时运营台、数据核对台、客服工具台</td>
+              <td>如果你后面需要一个“先能用”的内部小工具，而不想再手写一个后台页面，Appsmith 很适合补位。</td>
+              <td>仅在现有后台跟不上时再接</td>
+              <td>Apache License 2.0，支持自托管</td>
+              <td><span class="tag primary">按需</span></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>PostHog</strong><br />
+                <a class="ext" href="https://github.com/PostHog/posthog">GitHub</a>
+              </td>
+              <td>产品埋点、事件分析、会话录制、实验</td>
+              <td>功能很强，但对你当前 1 人团队来说偏重。如果后面要精细化运营免费版和会员漏斗，再考虑。</td>
+              <td>暂不建议现在接</td>
+              <td>支持自托管，[待验证] 具体当前许可策略需接入前复核</td>
+              <td><span class="tag warn">暂缓</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>怎么映射到你的项目</h2>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="tag-row"><span class="tag success">现在就有用</span></div>
+          <h3>Umami 对应场景</h3>
+          <p>以后你做机构开通说明页、激活码领取页、帮助中心、广告落地页时，可以先用它看访问量、来源和转化路径。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">稳定后再接</span></div>
+          <h3>Formbricks 对应场景</h3>
+          <p>适合校长试用 7 天后弹出问卷、功能使用后收反馈、免费版用户流失时采集原因。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag primary">不是主系统</span></div>
+          <h3>Appsmith 对应场景</h3>
+          <p>如果现有后台短期来不及补“运营核对台、投诉处理页、临时数据面板”，可以用它快速补一个内部工具。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>当前不建议接入的原因</h2>
+      <div class="note">
+        1. 你当前最大问题不是“没有更多工具”，而是“主链路没有完全打穿”。<br />
+        2. 所有新系统一旦接入，就会占用你本来就有限的前后端时间。<br />
+        3. 所以当前只建议“记录方案 + 选好方向”，不要把接入本身变成本周任务。<br />
+        4. 真正合理的节奏是：MVP 稳定上线后，先接一个轻量统计工具，再决定是否加反馈系统。<br />
+        5. Appsmith 只作为补位方案，不作为你的正式后台替代。
+      </div>
+    </section>
+  </div>
+</body>
+</html>

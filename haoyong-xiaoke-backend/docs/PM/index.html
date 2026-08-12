@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>松果助教 PM 总览中心</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --line: #dbe4f0;
+      --primary: #2563eb;
+      --primary-soft: #eaf2ff;
+      --success: #1f7a3d;
+      --success-soft: #edf8f0;
+      --warn: #b76a00;
+      --warn-soft: #fff5e8;
+      --danger: #b42318;
+      --danger-soft: #fdecec;
+      --shadow: 0 14px 32px rgba(31, 41, 55, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #eef4ff 0, var(--bg) 260px);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .layout {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 20px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      height: fit-content;
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 14px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .brand p {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .nav-group {
+      margin-top: 16px;
+    }
+
+    .nav-group h2 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: #667085;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      transition: background-color 0.2s ease;
+    }
+
+    .nav-link:hover {
+      background: #f3f6fb;
+      color: var(--text);
+    }
+
+    .nav-link.primary {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1d4ed8 0, #4f8cff 100%);
+      color: #fff;
+      border-radius: 28px;
+      padding: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 980px;
+      font-size: 15px;
+      line-height: 1.85;
+      color: rgba(255, 255, 255, 0.94);
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .meta-item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .meta-item span {
+      display: block;
+    }
+
+    .meta-item .label {
+      font-size: 12px;
+      opacity: 0.84;
+    }
+
+    .meta-item .value {
+      margin-top: 6px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .section {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .section h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .section .intro {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .card h4 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    .card p,
+    .card li,
+    th,
+    td,
+    .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .success { background: var(--success-soft); color: var(--success); }
+    .warn { background: var(--warn-soft); color: var(--warn); }
+    .danger { background: var(--danger-soft); color: var(--danger); }
+    .primary { background: var(--primary-soft); color: var(--primary); }
+
+    .doc-card {
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0, #fbfcff 100%);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .doc-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+    }
+
+    .doc-card .index {
+      display: inline-flex;
+      width: 30px;
+      height: 30px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .doc-card h4 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      color: var(--text);
+    }
+
+    .doc-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .progress-row {
+      display: grid;
+      gap: 14px;
+    }
+
+    .progress-item {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .progress-item .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .progress-item .name {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #edf2f8;
+      overflow: hidden;
+      margin: 8px 0 10px;
+    }
+
+    .progress-bar span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #2d6cf6 0, #63a4ff 100%);
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .mini {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fafcff;
+    }
+
+    .mini strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 960px;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f7f9fc;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .note {
+      border: 1px dashed #c7d2e5;
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: #f8fafc;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .layout {
+        padding: 14px 12px 36px;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero h2 {
+        font-size: 28px;
+      }
+
+      .section {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>PM 总览中心</h1>
+        <p>用于统一查看项目判断、MVP 收口、页面流程、问题记录和开源接入建议。</p>
+      </div>
+
+      <div class="nav-group">
+        <h2>首页</h2>
+        <a class="nav-link primary" href="index.html">总览首页</a>
+      </div>
+
+      <div class="nav-group">
+        <h2>项目文档</h2>
+        <a class="nav-link" href="project-review-preview.html">01 项目评估预览</a>
+        <a class="nav-link" href="mvp-launch-checklist.html">02 MVP 收口清单</a>
+        <a class="nav-link" href="mvp-page-flow.html">03 页面流程图</a>
+      </div>
+
+      <div class="nav-group">
+        <h2>执行补充</h2>
+        <a class="nav-link" href="issue-log.html">04 问题记录</a>
+        <a class="nav-link" href="oss-options.html">05 开源接入选项</a>
+        <a class="nav-link" href="dev-task-breakdown.html">06 开发任务拆解</a>
+        <a class="nav-link" href="api-alignment.html">07 接口对齐清单</a>
+        <a class="nav-link" href="data-contracts.html">08 核心数据约定</a>
+        <a class="nav-link" href="release-acceptance.html">09 上线验收清单</a>
+        <a class="nav-link" href="PRD/index.html">10 PRD 阅读器</a>
+      </div>
+
+      <div class="nav-group">
+        <h2>当前判断</h2>
+        <a class="nav-link">MVP 核心目标：先上线</a>
+        <a class="nav-link">主链路：机构 -> 校区 -> 教师 -> 教务</a>
+        <a class="nav-link">延后项：积分 / 家长端深化</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="hero">
+        <h2>松果助教 PM 导航总览</h2>
+        <p>
+          这页是 `docs/PM` 的入口中心。你可以在这里同时看到：目前已经完成了什么、项目里已经具备什么能力、
+          还缺哪些关键闭环、我基于代码检测到的主要问题、以及当前阶段适合接入的免费开源方案。
+          目标不是继续堆文档，而是让你一眼看清项目开发进度和下一步动作。
+        </p>
+        <div class="meta">
+          <div class="meta-item">
+            <span class="label">产品阶段</span>
+            <span class="value">MVP 收口上线</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">团队配置</span>
+            <span class="value">1 人 + AI 编程</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">注册模式</span>
+            <span class="value">开放注册</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">当前主线</span>
+            <span class="value">免费版先上线</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>文档导航树</h3>
+        <p class="intro">
+          当前 PM 目录已调整成“首页 + 子页”的方式。建议以后所有产品判断都从这里进入，而不是单独打开零散 HTML。
+        </p>
+        <div class="grid grid-3">
+          <a class="doc-card" href="project-review-preview.html">
+            <span class="index">01</span>
+            <h4>项目评估预览</h4>
+            <p>看项目整体判断、三端现状、主要风险和方向性结论。</p>
+          </a>
+          <a class="doc-card" href="mvp-launch-checklist.html">
+            <span class="index">02</span>
+            <h4>MVP 收口清单</h4>
+            <p>看当前版本必须做、可以预埋、明确延后的功能边界。</p>
+          </a>
+          <a class="doc-card" href="mvp-page-flow.html">
+            <span class="index">03</span>
+            <h4>页面流程图</h4>
+            <p>看校长、教师、免费版、会员状态的页面跳转和开发顺序。</p>
+          </a>
+          <a class="doc-card" href="issue-log.html">
+            <span class="index">04</span>
+            <h4>问题记录</h4>
+            <p>看我检测出的核心问题、严重度、影响范围和建议处理顺序。</p>
+          </a>
+          <a class="doc-card" href="oss-options.html">
+            <span class="index">05</span>
+            <h4>开源接入选项</h4>
+            <p>看当前阶段值得考虑的免费开源方案，以及为什么适合你。</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>当前开发进度</h3>
+        <p class="intro">
+          下面的进度是按“是否具备业务骨架”和“是否已满足上线闭环”两条标准综合判断，不是单纯按页面数量计算。
+        </p>
+        <div class="progress-row">
+          <div class="progress-item">
+            <div class="top">
+              <span class="name">后端业务能力</span>
+              <span class="tag success">已具备主骨架</span>
+            </div>
+            <div class="progress-bar"><span style="width: 82%;"></span></div>
+            <div class="cols">
+              <div class="mini">
+                <strong>已完成</strong>
+                认证、学生、班级、排课、课包、消课、请假、通知、运营后台、激活码、会员、邀请积分基础模型。
+              </div>
+              <div class="mini">
+                <strong>还需要做</strong>
+                机构主体与校区邀请码临时化、机构级激活逻辑、机构数据隔离进一步收口。
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-item">
+            <div class="top">
+              <span class="name">小程序端联调成熟度</span>
+              <span class="tag warn">核心阻塞未清</span>
+            </div>
+            <div class="progress-bar"><span style="width: 58%;"></span></div>
+            <div class="cols">
+              <div class="mini">
+                <strong>已完成</strong>
+                登录、首页、统计、学员、课程、角色切换等页面基础框架已存在，产品外观不是空壳。
+              </div>
+              <div class="mini">
+                <strong>还需要做</strong>
+                401 自动续期、关键服务去 Mock、首页运营接口对齐、机构/校区/教师加入主链路页面落地。
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-item">
+            <div class="top">
+              <span class="name">运营与商业化基础</span>
+              <span class="tag primary">具备预埋条件</span>
+            </div>
+            <div class="progress-bar"><span style="width: 68%;"></span></div>
+            <div class="cols">
+              <div class="mini">
+                <strong>已完成</strong>
+                运营后台已有激活码、会员、邀请积分、反馈、内容运营等能力基础。
+              </div>
+              <div class="mini">
+                <strong>还需要做</strong>
+                免费版/会员版状态页、广告位占位、后续积分兑换会员卡规则说明，小程序承接页补齐。
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>完成了什么 / 还需要做什么</h3>
+        <p class="intro">
+          这部分适合做日常推进检查。判断标准是“是否对 MVP 闭环有直接贡献”。
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>模块</th>
+                <th>已经完成</th>
+                <th>已经具备但未收口</th>
+                <th>还需要做</th>
+                <th>当前优先级</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>项目骨架</td>
+                <td>前后端和后台管理 3 个项目都已存在，PM 文档体系也已建立。</td>
+                <td>文档间已有结论，但还没有统一首页。</td>
+                <td>以后新增 PM 文档统一从本页挂载。</td>
+                <td><span class="tag success">已完成</span></td>
+              </tr>
+              <tr>
+                <td>认证与登录</td>
+                <td>后端有登录、刷新、手机号/微信入口；前端已有登录页和认证上下文。</td>
+                <td>前端存在 Mock 分支，登录后状态稳定性还未完全收口。</td>
+                <td>先修 refresh 自动续期和关键路径去 Mock。</td>
+                <td><span class="tag danger">P0</span></td>
+              </tr>
+              <tr>
+                <td>机构链路</td>
+                <td>校长角色和校区基础模块已存在。</td>
+                <td>产品规则已确定为“创建机构 -> 创建校区 -> 邀请教师”，但页面与后端约束还没完全统一。</td>
+                <td>补机构主实体流程、临时邀请码、教师加入完整链路。</td>
+                <td><span class="tag danger">P0</span></td>
+              </tr>
+              <tr>
+                <td>教务主链路</td>
+                <td>学生、班级、课包、消课等能力已有大量实现。</td>
+                <td>可用性高于一致性，部分地方仍混合真实接口和 Mock 数据。</td>
+                <td>挑一条真实主链路先打穿，不要同时做全量功能验证。</td>
+                <td><span class="tag warn">P1</span></td>
+              </tr>
+              <tr>
+                <td>运营后台</td>
+                <td>已有激活码、会员、邀请积分、反馈、内容运营页面。</td>
+                <td>小程序承接页不足，导致后台能力未完全转成前台闭环。</td>
+                <td>先不反向阻塞上线，待主链路稳定后补承接页。</td>
+                <td><span class="tag warn">P1</span></td>
+              </tr>
+              <tr>
+                <td>增长与商业化</td>
+                <td>激活码、会员、积分、邀请规则的模型与后台基础已具备。</td>
+                <td>当前业务已改成免费版优先，这些能力要重新定义角色。</td>
+                <td>本版只做状态和文案预埋，不进入主开发池。</td>
+                <td><span class="tag primary">后续</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>我检测后的问题摘要</h3>
+        <p class="intro">
+          这部分只放“影响 MVP 上线”的问题，不放代码风格类噪音。完整版本见 `问题记录` 子页。
+        </p>
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="tag-row">
+              <span class="tag danger">P0</span>
+            </div>
+            <h4>前端登录续期未收口</h4>
+            <p>401 后自动刷新令牌的闭环还不稳定，这是当前最容易影响真实用户使用的阻塞项。</p>
+          </div>
+          <div class="card">
+            <div class="tag-row">
+              <span class="tag danger">P0</span>
+            </div>
+            <h4>机构主体与教师加入链路未打穿</h4>
+            <p>业务规则已经明确，但产品和技术尚未完全按“机构 -> 校区 -> 临时邀请码 -> 教师加入”收口。</p>
+          </div>
+          <div class="card">
+            <div class="tag-row">
+              <span class="tag warn">P1</span>
+            </div>
+            <h4>Mock 残留较多</h4>
+            <p>学生、课程、认证等模块仍有较多 `USE_MOCK` 分支，影响真实联调效率。</p>
+          </div>
+          <div class="card">
+            <div class="tag-row">
+              <span class="tag warn">P1</span>
+            </div>
+            <h4>后台有能力，前台承接不足</h4>
+            <p>激活码、会员、邀请、内容运营已经有基础，但当前小程序还没有完整承接页。</p>
+          </div>
+        </div>
+        <div style="margin-top: 14px;">
+          <a class="doc-card" href="issue-log.html">
+            <span class="index">→</span>
+            <h4>进入完整问题记录</h4>
+            <p>查看每个问题的严重度、影响、建议动作和当前处理建议。</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>免费开源接入建议</h3>
+        <p class="intro">
+          你的当前阶段不适合引入“大而全”的新系统，只适合接入能补关键短板的工具。完整版本见 `开源接入选项` 子页。
+        </p>
+        <div class="grid grid-3">
+          <div class="card">
+            <div class="tag-row">
+              <span class="tag success">推荐</span>
+            </div>
+            <h4>Umami</h4>
+            <p>适合做官网、落地页、帮助页的访问分析，部署轻，适合 1 人团队快速搭建。</p>
+          </div>
+          <div class="card">
+            <div class="tag-row">
+              <span class="tag warn">按需</span>
+            </div>
+            <h4>Formbricks</h4>
+            <p>适合后续做用户反馈、流失回访问卷和简单 NPS，但不建议在首版上线前强接。</p>
+          </div>
+          <div class="card">
+            <div class="tag-row">
+              <span class="tag primary">补位</span>
+            </div>
+            <h4>Appsmith</h4>
+            <p>不用于替换现有后台，适合临时补一个内部运营工具或数据核对台。</p>
+          </div>
+        </div>
+        <div style="margin-top: 14px;">
+          <a class="doc-card" href="oss-options.html">
+            <span class="index">→</span>
+            <h4>进入完整开源接入页</h4>
+            <p>查看每个开源方案的适配场景、接入时机、许可类型和是否建议现在接入。</p>
+          </a>
+          <a class="doc-card" href="dev-task-breakdown.html">
+            <span class="index">06</span>
+            <h4>开发任务拆解</h4>
+            <p>把产品结论翻成可开发任务，直接按页面、接口、状态和验收标准推进。</p>
+          </a>
+          <a class="doc-card" href="api-alignment.html">
+            <span class="index">07</span>
+            <h4>接口对齐清单</h4>
+            <p>只看当前 MVP 需要真正打通的接口，避免全量联调带来噪音。</p>
+          </a>
+          <a class="doc-card" href="data-contracts.html">
+            <span class="index">08</span>
+            <h4>核心数据约定</h4>
+            <p>固定机构、校区、教师、激活码、会员状态等开发口径，避免返工。</p>
+          </a>
+          <a class="doc-card" href="release-acceptance.html">
+            <span class="index">09</span>
+            <h4>上线验收清单</h4>
+            <p>明确什么算通过、什么不通过，作为 MVP 上线开关使用。</p>
+          </a>
+          <a class="doc-card" href="PRD/index.html">
+            <span class="index">10</span>
+            <h4>PRD 阅读器</h4>
+            <p>按章节阅读交互型 PRD，查看角色主链路、页面交互、ASCII 与 Mermaid 流程图。</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>下一步执行入口</h3>
+        <p class="intro">
+          现在文档层已经够用了，接下来建议从“任务拆解页”进入执行层，不再继续扩展分析文档。
+        </p>
+        <div class="grid grid-3">
+          <a class="doc-card" href="dev-task-breakdown.html">
+            <span class="index">→</span>
+            <h4>进入开发任务拆解</h4>
+            <p>直接查看 P0 / P1 / P2 任务、所属端、状态异常和验收标准，按顺序开发。</p>
+          </a>
+          <a class="doc-card" href="api-alignment.html">
+            <span class="index">→</span>
+            <h4>进入接口对齐清单</h4>
+            <p>查看前后端真实联调状态，避免把时间浪费在次要接口上。</p>
+          </a>
+          <a class="doc-card" href="release-acceptance.html">
+            <span class="index">→</span>
+            <h4>进入上线验收清单</h4>
+            <p>开发完成后按这份清单自测，作为是否可以上线的最终标准。</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>当前执行建议</h3>
+        <div class="note">
+          1. 以后优先从这个首页进入，再查看子页，不再单独打开散页。<br />
+          2. 本周只围绕 `认证稳定 -> 机构创建 -> 校区创建 -> 教师邀请码 -> 首个教务动作` 五步推进。<br />
+          3. 所有积分、广告、会员增强都先记在 `开源接入选项` 和后续版本，不进入这周主线。<br />
+          4. 如果后面你要继续沉淀文档，我建议统一新增：`06 开发任务拆解`、`07 接口对齐清单` 两个子页。
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

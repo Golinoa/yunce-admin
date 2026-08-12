@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRD 04 教师与学员链路</title>
+  <style>
+    :root { --bg:#f5f7fb; --surface:#fff; --text:#1f2937; --muted:#5b6472; --line:#dbe4f0; --primary:#2563eb; --primary-soft:#eaf2ff; --success:#1f7a3d; --success-soft:#edf8f0; --warn:#b76a00; --warn-soft:#fff5e8; --shadow:0 14px 32px rgba(31,41,55,0.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:var(--text); background:linear-gradient(180deg,#eef4ff 0,var(--bg) 220px); }
+    a { color:inherit; text-decoration:none; }
+    .wrap { max-width:1400px; margin:0 auto; padding:24px 20px 48px; }
+    .topbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+    .nav-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,0.82); font-size:14px; box-shadow:var(--shadow); }
+    .hero { background:linear-gradient(135deg,#7a2f8f 0,#5b6dff 100%); color:#fff; border-radius:24px; padding:28px; box-shadow:var(--shadow); }
+    .hero h1 { margin:0; font-size:32px; }
+    .hero p { margin:12px 0 0; max-width:1060px; font-size:15px; line-height:1.85; color:rgba(255,255,255,0.94); }
+    .section { margin-top:20px; background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:22px; box-shadow:var(--shadow); }
+    .section h2 { margin:0 0 10px; font-size:22px; }
+    .intro, th, td, .note, pre, .card p, .card li { color:var(--muted); font-size:14px; line-height:1.8; }
+    .grid { display:grid; gap:16px; }
+    .grid-2 { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+    .grid-3 { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+    .card { border:1px solid var(--line); border-radius:18px; padding:18px; background:#fff; }
+    .card h3 { margin:0 0 8px; font-size:17px; }
+    .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+    .tag { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .primary { background:var(--primary-soft); color:var(--primary); }
+    .success { background:var(--success-soft); color:var(--success); }
+    .warn { background:var(--warn-soft); color:var(--warn); }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:16px; }
+    table { width:100%; min-width:1260px; border-collapse:collapse; background:#fff; }
+    th, td { padding:14px 16px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:#f7f9fc; color:#344054; font-weight:700; }
+    tr:last-child td { border-bottom:none; }
+    pre { margin:0; padding:16px; background:#0f172a; color:#dbeafe; border-radius:16px; overflow-x:auto; font-family:Consolas,monospace; }
+    .note { border:1px dashed #c7d2e5; border-radius:16px; padding:14px 16px; background:#f8fafc; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="nav-link" href="../index.html">PRD 首页</a>
+      <a class="nav-link" href="03-principal-flow.html">上一章：校长主链路</a>
+      <a class="nav-link" href="05-gap-plan.html">下一章：查漏补缺与分步完成</a>
+      <a class="nav-link" href="09-lesson-record-status-matrix.html">相关章节：消课记录状态矩阵</a>
+    </div>
+
+    <section class="hero">
+      <h1>04 教师与学员链路</h1>
+      <p>
+        本章基于当前前端真实页面与 service 逻辑，重点梳理教师侧的学员管理路径，尤其是“添加学员”这一高频动作。
+        这一章会直接回答：教师从哪里点、进入哪个页面、填什么、走什么校验、调什么接口、成功后跳去哪里。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>1. 教师主链路概览</h2>
+      <pre>教师登录
+  -> 若未绑定校区：先输入邀请码加入
+  -> 若已绑定：进入首页
+      -> 首页金刚区 / 首页卡片进入学员管理
+          -> 学员列表
+              -> 点击右上角 + 按钮
+                  -> 学员表单页
+                      -> 填写基础信息与课时信息
+                      -> 重名校验
+                      -> 创建学员接口
+                      -> 初始化课包
+                      -> 成功后询问是否立即分班</pre>
+    </section>
+
+    <section class="section">
+      <h2>2. 教师与学员链路 Mermaid</h2>
+      <pre>```mermaid
+flowchart TD
+    A[教师登录] --> B{是否已绑定校区}
+    B -->|否| C[邀请码加入页]
+    B -->|是| D[首页]
+    D --> E[学员管理]
+    E --> F[学员列表]
+    F --> G[点击添加学员]
+    G --> H[学员表单页]
+    H --> I[重名校验]
+    I --> J[创建学员接口]
+    J --> K[初始化课包]
+    K --> L{是否立即分班}
+    L -->|是| M[班级页]
+    L -->|否| N[返回上一页]
+```</pre>
+    </section>
+
+    <section class="section">
+      <h2>3. 添加学员交互逻辑</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>步骤</th>
+              <th>用户操作</th>
+              <th>页面变化</th>
+              <th>表单/校验</th>
+              <th>后端接口</th>
+              <th>成功后行为</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>教师从首页进入学员管理，或直接进入学员列表</td>
+              <td>打开学员列表页</td>
+              <td>无需填写</td>
+              <td><code>GET /students</code></td>
+              <td>展示列表、搜索与筛选</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>点击右上角 `+` 按钮</td>
+              <td>跳转到学员表单页</td>
+              <td>无需填写</td>
+              <td>无</td>
+              <td>进入新增学员流程</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>填写学员信息</td>
+              <td>仍停留在表单页</td>
+              <td>姓名、手机号、生日、地址、备注、头像、缴费金额、支付方式、课时相关字段</td>
+              <td>无</td>
+              <td>可提交状态变为可用</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>点击保存</td>
+              <td>先进行前端校验与重名检查</td>
+              <td>姓名必填、长度限制、手机号校验、日期不能晚于今天、课时合法性、支付方式补充说明</td>
+              <td><code>GET /students/check-duplicate</code></td>
+              <td>如重名则弹窗确认是否继续保存</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>确认保存</td>
+              <td>提交创建学员</td>
+              <td>构造学员 payload</td>
+              <td><code>POST /students</code></td>
+              <td>学员创建成功</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>系统自动初始化课包</td>
+              <td>仍停留当前流程</td>
+              <td>根据新学员/老学员模式初始化课时</td>
+              <td><code>POST /course-packages</code> [及可能的课时扣减接口]</td>
+              <td>初始化成功或提示“学员已创建，课时初始化失败”</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>系统询问是否立即分班</td>
+              <td>弹窗出现</td>
+              <td>无</td>
+              <td>无</td>
+              <td>确认则跳班级页，否则返回上一页</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4. 添加学员页面字段说明</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>字段</th>
+              <th>是否必填</th>
+              <th>规则</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>学员姓名</td>
+              <td>是</td>
+              <td>必填，最多 20 个字</td>
+              <td>提交前需做重名校验</td>
+            </tr>
+            <tr>
+              <td>手机号</td>
+              <td>否</td>
+              <td>如填写需符合 11 位手机号格式</td>
+              <td>用于联系与后续家长绑定</td>
+            </tr>
+            <tr>
+              <td>出生日期</td>
+              <td>否</td>
+              <td>不能晚于今天</td>
+              <td>用于资料补充</td>
+            </tr>
+            <tr>
+              <td>学员类型</td>
+              <td>是</td>
+              <td>新学员 / 老学员</td>
+              <td>决定后续课时初始化方式</td>
+            </tr>
+            <tr>
+              <td>初始课时</td>
+              <td>新学员时必填</td>
+              <td>必须大于 0</td>
+              <td>用于初始化“初始课时”课包</td>
+            </tr>
+            <tr>
+              <td>总充值课时 / 已消课时</td>
+              <td>老学员时必填</td>
+              <td>已消课时不能大于总课时</td>
+              <td>用于导入历史课时</td>
+            </tr>
+            <tr>
+              <td>缴费金额</td>
+              <td>否</td>
+              <td>不能为负数</td>
+              <td>支持后续支付方式记录</td>
+            </tr>
+            <tr>
+              <td>支付方式</td>
+              <td>否</td>
+              <td>若为 other，必须填写具体说明</td>
+              <td>用于财务记录</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>5. 当前真实页面与接口依据</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>模块</th>
+              <th>当前现状</th>
+              <th>PRD 判断</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>学员列表页</td>
+              <td>已有跳转详情与新增学员入口</td>
+              <td>页面结构可直接复用</td>
+            </tr>
+            <tr>
+              <td>学员表单页</td>
+              <td>已有较完整校验、保存与课包初始化逻辑</td>
+              <td>是当前 PRD 最值得直接沉淀的真实页面之一</td>
+            </tr>
+            <tr>
+              <td>学员接口</td>
+              <td>列表、详情、创建、更新、删除、重名校验已存在真实分支</td>
+              <td>优先以学员链路作为首个真实闭环是合理的</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. 当前缺口与补充建议</h2>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">缺口</span></div>
+          <h3>教师首次加入页尚未独立成主流程</h3>
+          <p>当前更容易看到“学员管理已具备”，但教师加入前置链路在产品层还未被同样明确地定义。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">缺口</span></div>
+          <h3>学员创建权限仍偏教师视角</h3>
+          <p>当前创建学员明显按教师身份设计；如果后续校长直接加学员，需要单独评估是否复用同一表单与接口口径。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. 相关规则补充</h2>
+      <div class="note">
+        学员主链路之外，和续费提醒、消课记录展示强相关的状态规则已单独沉淀到
+        <a href="09-lesson-record-status-matrix.html">《09 消课记录状态矩阵》</a>。<br />
+        该章节统一规定了：个人消课、双老师文案、补课/取消标签、班级三角色展示，以及课包剩余课时的三态表现。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>8. 本章结论</h2>
+      <div class="note">
+        1. 学员新增链路已经是当前前端里最接近“真实产品交互”的部分。<br />
+        2. 这条链路适合优先写成前端 spec，并作为后端接口联调的首个目标。<br />
+        3. 如果要让校长也能直接新增学员，建议先明确是否复用教师侧表单和接口口径。<br />
+        4. 下一章会把缺口、优先级和分步完成建议统一收口。
+      </div>
+    </section>
+  </div>
+</body>
+</html>

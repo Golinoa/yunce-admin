@@ -1,0 +1,340 @@
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>松果助教 PRD 阅读器</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --line: #dbe4f0;
+      --primary: #2563eb;
+      --primary-soft: #eaf2ff;
+      --success: #1f7a3d;
+      --success-soft: #edf8f0;
+      --warn: #b76a00;
+      --warn-soft: #fff5e8;
+      --shadow: 0 14px 32px rgba(31, 41, 55, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #eef4ff 0, var(--bg) 240px);
+    }
+    a { color: inherit; text-decoration: none; }
+    .layout {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 20px;
+    }
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      height: fit-content;
+      background: rgba(255,255,255,0.84);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 14px;
+    }
+    .brand h1 { margin: 0; font-size: 22px; }
+    .brand p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .nav-group { margin-top: 16px; }
+    .nav-group h2 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: #667085;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .nav-link {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .nav-link:hover { background: #f3f6fb; color: var(--text); }
+    .nav-link.primary { background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+    .hero {
+      background: linear-gradient(135deg, #1d4ed8 0, #4f8cff 100%);
+      color: #fff;
+      border-radius: 28px;
+      padding: 30px;
+      box-shadow: var(--shadow);
+    }
+    .hero h2 { margin: 0; font-size: 34px; line-height: 1.2; }
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 980px;
+      font-size: 15px;
+      line-height: 1.85;
+      color: rgba(255,255,255,0.94);
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .meta-item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+    .meta-item .label {
+      display: block;
+      font-size: 12px;
+      opacity: 0.84;
+    }
+    .meta-item .value {
+      display: block;
+      margin-top: 6px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .section {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    .section h3 { margin: 0 0 10px; font-size: 22px; }
+    .intro, .card p, .card li, th, td, .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: #fff;
+    }
+    .card h4 { margin: 0 0 8px; font-size: 17px; }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .primary { background: var(--primary-soft); color: var(--primary); }
+    .success { background: var(--success-soft); color: var(--success); }
+    .warn { background: var(--warn-soft); color: var(--warn); }
+    .doc-card {
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0, #fbfcff 100%);
+    }
+    .doc-card:hover { box-shadow: 0 10px 24px rgba(37,99,235,0.08); }
+    .doc-card .index {
+      display: inline-flex;
+      width: 30px;
+      height: 30px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .doc-card h4 { margin: 0 0 8px; font-size: 17px; }
+    .note {
+      border: 1px dashed #c7d2e5;
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: #f8fafc;
+    }
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>PRD 阅读器</h1>
+        <p>按“总览 -> 主链路 -> 页面交互 -> 接口映射 -> 缺口与规划”的方式阅读松果助教 MVP PRD。</p>
+      </div>
+      <div class="nav-group">
+        <h2>入口</h2>
+        <a class="nav-link primary" href="index.html">PRD 首页</a>
+        <a class="nav-link" href="../index.html">返回 PM 总览</a>
+      </div>
+      <div class="nav-group">
+        <h2>核心章节</h2>
+        <a class="nav-link" href="chapters/01-overview.html">01 总览与范围</a>
+        <a class="nav-link" href="chapters/02-navigation-state.html">02 导航与状态机</a>
+        <a class="nav-link" href="chapters/03-principal-flow.html">03 校长主链路</a>
+        <a class="nav-link" href="chapters/04-teacher-student-flow.html">04 教师与学员链路</a>
+        <a class="nav-link" href="chapters/05-gap-plan.html">05 查漏补缺与分步完成</a>
+      </div>
+      <div class="nav-group">
+        <h2>页面级 PRD</h2>
+        <a class="nav-link" href="chapters/06-principal-org-form.html">06 校长机构信息页</a>
+        <a class="nav-link" href="chapters/07-principal-campus-form.html">07 默认主校区自动创建规则</a>
+        <a class="nav-link" href="chapters/08-teacher-invite-bind.html">08 教师邀请码与绑定页</a>
+        <a class="nav-link" href="chapters/09-lesson-record-status-matrix.html">09 消课记录状态矩阵</a>
+      </div>
+      <div class="nav-group">
+        <h2>阅读建议</h2>
+        <a class="nav-link">先看总览与范围</a>
+        <a class="nav-link">再看状态机</a>
+        <a class="nav-link">再看校长/教师链路</a>
+        <a class="nav-link">最后看缺口与规划</a>
+      </div>
+    </aside>
+
+    <main>
+      <section class="hero">
+        <h2>松果助教 MVP PRD 门户</h2>
+        <p>
+          这套文档不是“功能清单”，而是面向开发、联调、验收的交互型 PRD。每个核心章节都会尽量回答
+          4 个问题：用户从哪里进入、点击什么、进入哪个页面、填写什么信息、调用哪个后端接口提交。
+          页面之间的关系将用 ASCII 与 Mermaid 两种形式同时展示。
+        </p>
+        <div class="meta">
+          <div class="meta-item">
+            <span class="label">版本目标</span>
+            <span class="value">完成 MVP 闭环</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">主角色</span>
+            <span class="value">校长 / 教师</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">业务原则</span>
+            <span class="value">免费版先上线</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">阅读方式</span>
+            <span class="value">多文档导航</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>章节地图</h3>
+        <p class="intro">
+          我把 PRD 拆成“核心章节 + 页面级 PRD”两层，而不是堆成一个超长文档。这样更适合你逐章 review，也更适合后面继续补充。
+        </p>
+        <div class="grid grid-3">
+          <a class="doc-card" href="chapters/01-overview.html">
+            <span class="index">01</span>
+            <h4>总览与范围</h4>
+            <p>固定版本目标、角色范围、产品原则、信息架构与本版边界。</p>
+          </a>
+          <a class="doc-card" href="chapters/02-navigation-state.html">
+            <span class="index">02</span>
+            <h4>导航与状态机</h4>
+            <p>梳理当前页面结构、路由守卫、角色状态跳转和主路径入口。</p>
+          </a>
+          <a class="doc-card" href="chapters/03-principal-flow.html">
+            <span class="index">03</span>
+            <h4>校长主链路</h4>
+            <p>从校长首次进入开始，梳理机构、校区、邀请教师等核心流程。</p>
+          </a>
+          <a class="doc-card" href="chapters/04-teacher-student-flow.html">
+            <span class="index">04</span>
+            <h4>教师与学员链路</h4>
+            <p>重点写清学员列表、添加学员、详情、分班和接口调用。</p>
+          </a>
+          <a class="doc-card" href="chapters/05-gap-plan.html">
+            <span class="index">05</span>
+            <h4>查漏补缺与分步完成</h4>
+            <p>把当前缺口、风险、优先级和建议开发顺序收口成行动计划。</p>
+          </a>
+          <a class="doc-card" href="chapters/06-principal-org-form.html">
+            <span class="index">06</span>
+            <h4>校长机构信息页</h4>
+            <p>定义校长在注册流程中只填写机构名称的最小表单，以及提交后的组织创建逻辑。</p>
+          </a>
+          <a class="doc-card" href="chapters/07-principal-campus-form.html">
+            <span class="index">07</span>
+            <h4>默认主校区自动创建规则</h4>
+            <p>明确默认主校区由系统自动生成，而不是让校长在首链路手工填写校区信息。</p>
+          </a>
+          <a class="doc-card" href="chapters/08-teacher-invite-bind.html">
+            <span class="index">08</span>
+            <h4>教师邀请码与绑定页</h4>
+            <p>拆分校长发码和教师绑定两端页面，并明确临时邀请码与教师静态邀请码的差异。</p>
+          </a>
+          <a class="doc-card" href="chapters/09-lesson-record-status-matrix.html">
+            <span class="index">09</span>
+            <h4>消课记录状态矩阵</h4>
+            <p>沉淀个人消课、补课、取消、班级三角色展示和课包剩余课时三态的统一规则。</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>这套 PRD 的优缺点</h3>
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="tag-row"><span class="tag success">优点</span></div>
+            <h4>更适合开发执行</h4>
+            <p>按链路和页面拆分，能直接支持前后端写 spec 和联调，不会停留在抽象需求层。</p>
+          </div>
+          <div class="card">
+            <div class="tag-row"><span class="tag warn">代价</span></div>
+            <h4>篇幅会更长</h4>
+            <p>因为会写到页面动作、字段、接口、异常分支，所以文档长度会明显大于普通 PRD。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>当前写作口径</h3>
+        <div class="note">
+          1. 主文档只覆盖 MVP 闭环。<br />
+          2. 家长端、积分、广告、任务中心不进入当前主体。<br />
+          3. 以当前前端真实页面和跳转逻辑为基础，查漏补缺，不凭空造流程。<br />
+          4. 所有关键链路优先回答“用户点哪里、进哪里、填什么、调什么接口”。
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

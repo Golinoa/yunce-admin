@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: xiaoke-db
+    environment:
+      MYSQL_DATABASE: xiaoke
+      MYSQL_USER: xiaoke
+      MYSQL_PASSWORD: change_me_local_db_password
+      MYSQL_ROOT_PASSWORD: change_me_local_root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-pchange_me_local_root_password']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: .
+    container_name: xiaoke-api
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: mysql://xiaoke:change_me_local_db_password@mysql:3306/xiaoke
+      JWT_SECRET: change_me_local_jwt_secret_min_32_chars
+      PORT: 3000
+      NODE_ENV: development
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma migrate deploy &&
+             npm run start"
+
+volumes:
+  mysql_data:

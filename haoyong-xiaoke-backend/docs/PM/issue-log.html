@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>松果助教问题记录</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --line: #dbe4f0;
+      --primary: #2563eb;
+      --primary-soft: #eaf2ff;
+      --danger: #b42318;
+      --danger-soft: #fdecec;
+      --warn: #b76a00;
+      --warn-soft: #fff5e8;
+      --success: #1f7a3d;
+      --success-soft: #edf8f0;
+      --shadow: 0 14px 32px rgba(31, 41, 55, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #eef4ff 0, var(--bg) 220px);
+    }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #173da9 0, #3977ff 100%);
+      color: #fff;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 32px;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      max-width: 980px;
+      font-size: 15px;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.94);
+    }
+
+    .section {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .section .intro,
+    .summary p,
+    th,
+    td,
+    .note,
+    .card p,
+    .card li {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .danger { background: var(--danger-soft); color: var(--danger); }
+    .warn { background: var(--warn-soft); color: var(--warn); }
+    .success { background: var(--success-soft); color: var(--success); }
+    .primary { background: var(--primary-soft); color: var(--primary); }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1120px;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f7f9fc;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .note {
+      border: 1px dashed #c7d2e5;
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: #f8fafc;
+    }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: #f4f7fb;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      color: #0f172a;
+    }
+
+    @media (max-width: 720px) {
+      .wrap {
+        padding: 14px 12px 36px;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero h1 {
+        font-size: 28px;
+      }
+
+      .section {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="back" href="index.html">返回 PM 总览首页</a>
+    </div>
+
+    <section class="hero">
+      <h1>问题记录</h1>
+      <p>
+        这份记录只收纳“会影响 MVP 上线、联调效率、数据安全和后续产品骨架”的问题。
+        我已经剔除了低价值的样式问题和泛泛而谈的建议，保留的是当前版本真正需要处理的阻塞项。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>问题分层</h2>
+      <p class="intro">
+        先看严重度，再决定行动顺序。当前建议是：先清 P0，P1 不阻塞上线，P2 进入后续规划。
+      </p>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="tag-row"><span class="tag danger">P0</span></div>
+          <h3>必须立即处理</h3>
+          <p>不解决就会直接影响注册、登录、机构入驻或首个教务动作。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">P1</span></div>
+          <h3>不阻塞上线</h3>
+          <p>会影响真实体验、效率或长期结构，但可以在 MVP 跑通后继续修。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag primary">P2</span></div>
+          <h3>后续优化</h3>
+          <p>当前版本不处理，统一放到后续版本或开源工具补位阶段。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>完整问题清单</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>优先级</th>
+              <th>问题</th>
+              <th>当前现象</th>
+              <th>影响</th>
+              <th>建议动作</th>
+              <th>证据</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag danger">P0</span></td>
+              <td>登录态刷新闭环未收口</td>
+              <td>小程序端仍以本地 token 检查和被动刷新为主，401 相关处理不够完整。</td>
+              <td>真实用户登录后可能掉线或需要重复登录，直接影响首批试用印象。</td>
+              <td>先统一 access token 失效后的 refresh 策略，再清理登录态和路由守卫逻辑。</td>
+              <td><a href="file:///d:/Coding/yunceWX/yunce/src/utils/route-guard.tsx"><code>src/utils/route-guard.tsx</code></a></td>
+            </tr>
+            <tr>
+              <td><span class="tag danger">P0</span></td>
+              <td>机构主实体与教师加入链路未打穿</td>
+              <td>后端已有校长、校区、教师相关模块，但当前产品规则刚刚确定为“机构 -> 校区 -> 邀请教师”，实现还未统一。</td>
+              <td>MVP 无法形成机构级闭环，校长注册后不一定知道下一步做什么。</td>
+              <td>优先做创建机构、创建校区、临时邀请码、教师加入 4 个页面和对应接口约束。</td>
+              <td><a href="file:///d:/Coding/yunce-back/haoyong-xiaoke-backend/src/routes/index.ts"><code>src/routes/index.ts</code></a> / <a href="file:///d:/Coding/yunce-back/haoyong-xiaoke-backend/src/campus/campus.controller.ts"><code>src/campus</code></a></td>
+            </tr>
+            <tr>
+              <td><span class="tag danger">P0</span></td>
+              <td>免费版与会员版状态语义尚未统一</td>
+              <td>业务已经改成“免费版先上线”，但已有文案和部分逻辑仍沿用“未激活”的旧语义。</td>
+              <td>产品语言不一致，会让用户误解自己不能使用基础功能。</td>
+              <td>前台统一改为“免费版 / 会员版 / 机构已激活高级能力”三层状态描述。</td>
+              <td><a href="mvp-launch-checklist.html"><code>mvp-launch-checklist.html</code></a></td>
+            </tr>
+            <tr>
+              <td><span class="tag warn">P1</span></td>
+              <td>小程序端 Mock 残留较多</td>
+              <td>学生、课程、排课、认证等模块中存在大量 <code>USE_MOCK</code> 分支。</td>
+              <td>真实联调阶段很难判断问题来自接口还是本地假数据。</td>
+              <td>先只清理主链路所涉及模块，不要追求一次性把全项目 Mock 清空。</td>
+              <td><a href="file:///d:/Coding/yunceWX/yunce/src/services/student.ts"><code>src/services/student.ts</code></a> / <a href="file:///d:/Coding/yunceWX/yunce/src/services/auth.ts"><code>src/services/auth.ts</code></a></td>
+            </tr>
+            <tr>
+              <td><span class="tag warn">P1</span></td>
+              <td>首页运营接口路径与前后台承接未完全对齐</td>
+              <td>首页运营位已接入真实接口尝试，但活动、邀请、会员承接页还未完整补齐。</td>
+              <td>后台配置能力无法顺畅转化为前台运营闭环。</td>
+              <td>本版先不强求闭环，只保留必要承接；运营体系后续补完。</td>
+              <td><a href="file:///d:/Coding/yunceWX/yunce/src/services/home.ts"><code>src/services/home.ts</code></a></td>
+            </tr>
+            <tr>
+              <td><span class="tag warn">P1</span></td>
+              <td>校长视角和机构数据隔离仍偏弱</td>
+              <td>后端具备 PRINCIPAL 角色和校区数据，但机构级归属骨架仍需继续加强。</td>
+              <td>现在不一定阻塞上线，但后续规模化会影响数据安全和权限边界。</td>
+              <td>先保证 MVP 能用，二期再补更标准的机构实体与租户隔离。</td>
+              <td><a href="file:///d:/Coding/yunce-back/haoyong-xiaoke-backend/src/auth/auth.service.ts"><code>src/auth/auth.service.ts</code></a></td>
+            </tr>
+            <tr>
+              <td><span class="tag primary">P2</span></td>
+              <td>签到积分、邀请积分、积分兑换会员卡未进入执行闭环</td>
+              <td>后端已有积分和邀请规则基础，但产品已决定不让它们阻塞首版上线。</td>
+              <td>当前不影响 MVP 上线，但会影响后续增长节奏。</td>
+              <td>先保留规则设计和后台基础，二期再补小程序承接和运营中台查看。</td>
+              <td><a href="file:///d:/Coding/yunce-back/haoyong-xiaoke-backend/src/admin/admin.routes.ts"><code>src/admin/admin.routes.ts</code></a></td>
+            </tr>
+            <tr>
+              <td><span class="tag primary">P2</span></td>
+              <td>家长端能力与当前版本主线不一致</td>
+              <td>代码里保留了家长端相关流程和页面，但你已经决定当前版本弱化家长端。</td>
+              <td>如果继续扩展会持续分散前端时间。</td>
+              <td>保持兼容，不再投入新需求，首页和导航不要继续放大家长端入口。</td>
+              <td><a href="file:///d:/Coding/yunceWX/yunce/src/pages/profile/index.tsx"><code>src/pages/profile/index.tsx</code></a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>当前建议的修复顺序</h2>
+      <div class="note">
+        1. 先修认证和状态机，保证用户不掉线。<br />
+        2. 再做机构创建、校区创建、邀请码、教师加入。<br />
+        3. 然后选一条教务真实主链路打穿。<br />
+        4. 最后才补前台运营承接、会员状态和后续增长入口。<br />
+        5. 所有积分和广告变现相关内容当前只记账，不进入本周开发主线。
+      </div>
+    </section>
+  </div>
+</body>
+</html>

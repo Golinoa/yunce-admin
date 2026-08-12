@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRD 05 查漏补缺与分步完成</title>
+  <style>
+    :root { --bg:#f5f7fb; --surface:#fff; --text:#1f2937; --muted:#5b6472; --line:#dbe4f0; --primary:#2563eb; --primary-soft:#eaf2ff; --success:#1f7a3d; --success-soft:#edf8f0; --warn:#b76a00; --warn-soft:#fff5e8; --danger:#b42318; --danger-soft:#fdecec; --shadow:0 14px 32px rgba(31,41,55,0.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:var(--text); background:linear-gradient(180deg,#eef4ff 0,var(--bg) 220px); }
+    a { color:inherit; text-decoration:none; }
+    .wrap { max-width:1360px; margin:0 auto; padding:24px 20px 48px; }
+    .topbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+    .nav-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,0.82); font-size:14px; box-shadow:var(--shadow); }
+    .hero { background:linear-gradient(135deg,#8a1f49 0,#d95a72 100%); color:#fff; border-radius:24px; padding:28px; box-shadow:var(--shadow); }
+    .hero h1 { margin:0; font-size:32px; }
+    .hero p { margin:12px 0 0; max-width:1000px; font-size:15px; line-height:1.85; color:rgba(255,255,255,0.94); }
+    .section { margin-top:20px; background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:22px; box-shadow:var(--shadow); }
+    .section h2 { margin:0 0 10px; font-size:22px; }
+    .intro, th, td, .note, .card p, .card li, pre { color:var(--muted); font-size:14px; line-height:1.8; }
+    .grid { display:grid; gap:16px; }
+    .grid-2 { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+    .grid-3 { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+    .card { border:1px solid var(--line); border-radius:18px; padding:18px; background:#fff; }
+    .card h3 { margin:0 0 8px; font-size:17px; }
+    .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+    .tag { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .primary { background:var(--primary-soft); color:var(--primary); }
+    .success { background:var(--success-soft); color:var(--success); }
+    .warn { background:var(--warn-soft); color:var(--warn); }
+    .danger { background:var(--danger-soft); color:var(--danger); }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:16px; }
+    table { width:100%; min-width:1140px; border-collapse:collapse; background:#fff; }
+    th, td { padding:14px 16px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:#f7f9fc; color:#344054; font-weight:700; }
+    tr:last-child td { border-bottom:none; }
+    .note { border:1px dashed #c7d2e5; border-radius:16px; padding:14px 16px; background:#f8fafc; }
+    pre { margin:0; padding:16px; background:#0f172a; color:#dbeafe; border-radius:16px; overflow-x:auto; font-family:Consolas,monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="nav-link" href="../index.html">PRD 首页</a>
+      <a class="nav-link" href="04-teacher-student-flow.html">上一章：教师与学员链路</a>
+      <a class="nav-link" href="06-principal-org-form.html">下一章：校长机构信息页</a>
+      <a class="nav-link" href="../../index.html">返回 PM 总览</a>
+    </div>
+
+    <section class="hero">
+      <h1>05 查漏补缺与分步完成</h1>
+      <p>
+        本章把前 4 章的结论转化成执行规划：哪些是当前真正阻塞 MVP 的缺口，哪些可以复用现有页面，哪些需要新建 spec，哪些必须明确延后。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>1. 已有能力 vs 缺失能力</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>模块</th>
+              <th>当前已有</th>
+              <th>当前缺失</th>
+              <th>判断</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>登录与注册</td>
+              <td>页面与基础守卫已存在</td>
+              <td>校长首链路仍未完全按“微信登录 -> 选校长 -> 填机构名 -> 自动建主校区 -> 首页”收口</td>
+              <td><span class="tag danger">P0</span></td>
+            </tr>
+            <tr>
+              <td>首页工作台</td>
+              <td>金刚区、通知、内容卡片、常用业务入口已存在</td>
+              <td>新用户首次进入前置流程不足</td>
+              <td><span class="tag warn">P1</span></td>
+            </tr>
+            <tr>
+              <td>校长组织初始化</td>
+              <td>角色信息页已有机构名称输入，校区设置已有后续管理能力</td>
+              <td>首链路应收缩为只填机构名称，并补“自动创建默认主校区”规则</td>
+              <td><span class="tag danger">P0</span></td>
+            </tr>
+            <tr>
+              <td>教师加入</td>
+              <td>产品规则已明确</td>
+              <td>教师输入邀请码独立主流程</td>
+              <td><span class="tag danger">P0</span></td>
+            </tr>
+            <tr>
+              <td>学员管理</td>
+              <td>列表、详情、表单、接口分支、课包初始化都相对完整</td>
+              <td>需要和新的组织状态链路打通</td>
+              <td><span class="tag success">优先复用</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. 分步完成建议</h2>
+      <pre>第一步：收口校长首链路
+  - 登录状态检测
+  - 微信一键登录
+  - 身份选择
+  - 校长角色信息页只保留机构名称
+  - 自动创建默认主校区
+
+第二步：补教师加入入口
+  - 教师邀请码页
+  - 教师输入邀请码页
+
+第三步：打通真实业务
+  - 学员列表
+  - 学员新增
+  - 学员详情
+
+第四步：补收口
+  - 首页入口文案
+  - 免费版/会员版状态说明
+  - 异常提示与返回路径</pre>
+    </section>
+
+    <section class="section">
+      <h2>3. 推荐 spec 拆分</h2>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="tag-row"><span class="tag primary">前端 spec</span></div>
+          <h3>建议拆 6 份</h3>
+          <p>登录态与状态机、校长角色信息页、默认主校区自动创建联动、教师邀请码页、教师加入页、学员新增链路。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag primary">后端 spec</span></div>
+          <h3>建议拆 5 份</h3>
+          <p>认证口径、机构主体、默认主校区自动创建规则、教师临时邀请码、教师绑定与学员主链路接口。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4. 风险记录</h2>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="tag-row"><span class="tag danger">高风险</span></div>
+          <h3>校长首链路过长</h3>
+          <p>如果继续把“手工创建校区”放在首链路里，会直接拉长注册完成路径。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag danger">高风险</span></div>
+          <h3>邀请码语义混用</h3>
+          <p>教师邀请码、学生邀请码、邀请积分邀请码不能继续混用。</p>
+        </div>
+        <div class="card">
+          <div class="tag-row"><span class="tag warn">中风险</span></div>
+          <h3>组织主体未立住</h3>
+          <p>如果机构主体不明确，后续会员、激活码、权限都会返工。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>5. 当前版本边界</h2>
+      <div class="note">
+        当前版本完成标准不是“功能很多”，而是“一个新机构能顺利走完第一次使用”。<br />
+        所以本版做：状态机、校长角色信息收口、默认主校区自动创建、教师加入、学员新增闭环。<br />
+        本版不做：积分、广告、任务中心、家长端深化、复杂运营能力。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. 本章结论</h2>
+      <div class="note">
+        1. 现有前端不是重做，而是收口。<br />
+        2. 当前最值得复用的是学员链路。<br />
+        3. 当前最需要纠正的是校长初始化链路，不是继续假设一个手工建校区页。<br />
+        4. 后续如果你认可，这套 PRD 可以继续扩成更细的页面级章节，但已经足够支持当前一轮 spec 编写。
+      </div>
+    </section>
+  </div>
+</body>
+</html>

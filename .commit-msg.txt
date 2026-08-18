@@ -1,7 +1,0 @@
-release: 项目重构为 yunce 体系并落地 SSL 证书自动化 v2.2
-
-- 将后端从 haoyong-xiaoke-backend 重构为 yunce-backend
-- SSL 证书自动化升级：并发锁、安装前自动备份、acme.sh 可用性检查
-- staging/生产证书路径隔离
-- 内置外部 HTTPS 证书验证（无需第三方 SaaS）
-- /status 路由鉴权、飞书告警格式

@@ -1,7 +1,0 @@
-CREATE DATABASE IF NOT EXISTS `xiaoke`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-CREATE USER IF NOT EXISTS 'xiaoke'@'%' IDENTIFIED BY 'xiaoke_dev';
-GRANT ALL PRIVILEGES ON `xiaoke`.* TO 'xiaoke'@'%';
-FLUSH PRIVILEGES;

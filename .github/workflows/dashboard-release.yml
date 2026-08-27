@@ -23,6 +23,8 @@ jobs:
   build-and-push:
     name: 构建 + 推送 dashboard 镜像
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,12 +82,24 @@ jobs:
     name: 部署到生产服务器
     needs: [build-and-push]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/dashboard-v')
     environment:
       name: production
       url: https://dashboard.chancore.cn
     steps:
-      - name: 部署 dashboard（SSH）
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 上传 bootstrap + deploy 脚本
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "yunce-admin/scripts/deploy/server-bootstrap.sh,yunce-admin/scripts/deploy/deploy-dashboard.sh"
+          target: "/tmp"
+          strip_components: 3
+
+      - name: 引导配置并部署
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -94,7 +108,13 @@ jobs:
           command_timeout: 30m
           script: |
             set -euo pipefail
-            TAG="${{ github.ref_name }}"
-            TAG="${TAG#dashboard-v}"
+            TAG="${{ needs.build-and-push.outputs.tag }}"
             echo "==> 部署运营后台版本: ${TAG}"
+            sed -i 's/\r$//' /tmp/server-bootstrap.sh /tmp/deploy-dashboard.sh
+            chmod +x /tmp/server-bootstrap.sh /tmp/deploy-dashboard.sh
+            bash /tmp/server-bootstrap.sh "${TAG}"
             /opt/yunce/deploy/scripts/deploy-dashboard.sh "${TAG}"
+            # 同源反代无需 CORS，但若改了 CORS 需重启 backend 生效
+            if docker compose -f /opt/yunce/deploy/docker-compose.yml ps backend --status running >/dev/null 2>&1; then
+              docker compose -f /opt/yunce/deploy/docker-compose.yml up -d backend || true
+            fi

@@ -11,5 +11,11 @@
     "title": "概览",
     "analytics": "分析页",
     "workspace": "工作台"
+  },
+  "organization": {
+    "storeEntry": "入驻审核",
+    "storeEntryDetail": "入驻审核详情",
+    "organizations": "机构管理",
+    "versions": "版本配置"
   }
 }

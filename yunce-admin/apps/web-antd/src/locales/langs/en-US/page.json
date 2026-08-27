@@ -11,5 +11,11 @@
     "title": "Dashboard",
     "analytics": "Analytics",
     "workspace": "Workspace"
+  },
+  "organization": {
+    "storeEntry": "Store Entry Review",
+    "storeEntryDetail": "Store Entry Review Detail",
+    "organizations": "Organizations",
+    "versions": "Version Config"
   }
 }

@@ -48,7 +48,7 @@ const formSchema = computed((): VbenFormSchema[] => {
   <AuthenticationLogin
     :form-schema="formSchema"
     :loading="authStore.loginLoading"
-    description="好用消课运营管理后台"
+    description="松果排课运营管理后台"
     title="账号密码登录"
     @submit="authStore.authLogin"
   />

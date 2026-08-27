@@ -82,6 +82,26 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    meta: {
+      icon: 'lucide:bell',
+      order: 23,
+      title: $t('page.organization.notifySettings'),
+    },
+    name: 'NotifySettings',
+    path: '/operation/notify-settings',
+    children: [
+      {
+        name: 'NotifySettingsPage',
+        path: '/operation/notify-settings',
+        component: () => import('#/views/operation/notify-settings/index.vue'),
+        meta: {
+          icon: 'lucide:bell',
+          title: $t('page.organization.notifySettings'),
+        },
+      },
+    ],
+  },
 ];
 
 export default routes;

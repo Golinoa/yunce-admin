@@ -235,3 +235,37 @@ export function createActivityApi(data: Record<string, unknown>) {
 export function updateActivityApi(id: string, data: Record<string, unknown>) {
   return requestClient.put(`/activities/${id}`, data);
 }
+
+export interface OpsNotifySwitches {
+  feedbackNew: boolean;
+  orgVersionChanged: boolean;
+  storeEntryApproved: boolean;
+  storeEntryRejected: boolean;
+  storeEntrySubmitted: boolean;
+}
+
+export interface OpsNotifyConfig {
+  dashboardOrigin: string;
+  enabled: boolean;
+  hasWebhook: boolean;
+  switches: OpsNotifySwitches;
+  updatedAt: string;
+  webhookMasked: string;
+  webhookUrl: string;
+}
+
+export function getOpsNotifyConfigApi() {
+  return requestClient.get<OpsNotifyConfig>('/ops-notify/config');
+}
+
+export function updateOpsNotifyConfigApi(data: {
+  enabled?: boolean;
+  switches?: Partial<OpsNotifySwitches>;
+  webhookUrl?: null | string;
+}) {
+  return requestClient.put<OpsNotifyConfig>('/ops-notify/config', data);
+}
+
+export function testOpsNotifyWebhookApi() {
+  return requestClient.post<{ message: string; success: boolean }>('/ops-notify/test');
+}

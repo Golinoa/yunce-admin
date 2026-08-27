@@ -1,0 +1,55 @@
+name: Yunce Dashboard CI
+
+# 仓库根目录为 yunce-back，前端工程在 yunce-admin/
+on:
+  pull_request:
+    paths:
+      - 'yunce-admin/**'
+      - '.github/workflows/dashboard-ci.yml'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'yunce-admin/**'
+      - '.github/workflows/dashboard-ci.yml'
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    name: 构建 web-antd + Docker 镜像
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: yunce-admin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: yunce-admin/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web-antd
+        run: pnpm run build:antd
+
+      - name: Docker build test
+        run: docker build -f scripts/deploy/Dockerfile -t yunce-dashboard:ci .

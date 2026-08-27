@@ -1,7 +1,28 @@
-node_modules
+# Git / IDE
 .git
-.gitignore
-*.md
-dist
-.turbo
-dist.zip
+.github
+.vscode
+.idea
+**/.DS_Store
+
+# Dependencies & build cache (rebuilt in container)
+node_modules
+**/node_modules
+**/.turbo
+**/dist
+**/.vitepress/dist
+
+# Docs & demo apps (not needed for web-antd production build)
+docs
+playground
+
+# Other UI shells (only web-antd is deployed)
+apps/web-ele
+apps/web-naive
+apps/web-tdesign
+apps/web-antdv-next
+
+# Local logs & debug notes
+**/*.log
+debug-*.md
+scripts/deploy/build-local-docker-image.log

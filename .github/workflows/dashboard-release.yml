@@ -1,0 +1,100 @@
+name: Yunce Dashboard Release
+
+# 触发：推送 dashboard-v* tag（如 dashboard-v1.0.0）
+# 或手动 workflow_dispatch
+# 仓库根目录为 yunce-back，Docker context = yunce-admin/
+on:
+  push:
+    tags:
+      - 'dashboard-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '镜像 tag（如 1.0.0 或 latest）'
+        required: true
+        default: 'latest'
+
+env:
+  REGISTRY: crpi-82tx5wbfqndabcwb.cn-shanghai.personal.cr.aliyuncs.com
+  NAMESPACE: ${{ secrets.ACR_NAMESPACE }}
+  IMAGE_NAME: yunce-dashboard
+
+jobs:
+  build-and-push:
+    name: 构建 + 推送 dashboard 镜像
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 校验 ACR 凭证
+        run: |
+          if [ -z "${{ secrets.ACR_REGISTRY_USERNAME }}" ] || [ -z "${{ secrets.ACR_REGISTRY_PASSWORD }}" ]; then
+            echo "::error::请在仓库 Secrets 配置 ACR_REGISTRY_USERNAME / ACR_REGISTRY_PASSWORD（与 yunce-backend 相同）"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ACR_NAMESPACE }}" ]; then
+            echo "::error::请配置 ACR_NAMESPACE"
+            exit 1
+          fi
+
+      - name: 登录阿里云 ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_REGISTRY_USERNAME }}
+          password: ${{ secrets.ACR_REGISTRY_PASSWORD }}
+
+      - name: 提取版本号
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            REF="${GITHUB_REF#refs/tags/dashboard-v}"
+            echo "tag=${REF}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 构建 + 推送镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: yunce-admin
+          file: yunce-admin/scripts/deploy/Dockerfile
+          push: true
+          provenance: false
+          sbom: false
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.title=yunce-dashboard
+            org.opencontainers.image.version=${{ steps.version.outputs.tag }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: 部署到生产服务器
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/dashboard-v')
+    environment:
+      name: production
+      url: https://dashboard.chancore.cn
+    steps:
+      - name: 部署 dashboard（SSH）
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+            TAG="${{ github.ref_name }}"
+            TAG="${TAG#dashboard-v}"
+            echo "==> 部署运营后台版本: ${TAG}"
+            /opt/yunce/deploy/scripts/deploy-dashboard.sh "${TAG}"

@@ -16,7 +16,8 @@
     "storeEntry": "入驻审核",
     "storeEntryDetail": "入驻审核详情",
     "organizations": "机构管理",
-    "versions": "套餐限额",
-    "notifySettings": "飞书通知"
+    "versions": "套餐与功能",
+    "notifySettings": "飞书通知",
+    "systemVersions": "系统版本"
   }
 }

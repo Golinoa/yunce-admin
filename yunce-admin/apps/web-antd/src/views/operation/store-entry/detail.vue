@@ -10,6 +10,7 @@ import {
   getStoreEntryApplicationDetailApi,
   rejectStoreEntryApplicationApi,
 } from '#/api';
+import { formatVersionLabel, versionColor as resolveVersionColor } from '#/utils/organization-version';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,6 +20,7 @@ const detail = ref<StoreEntryApplicationDetail | null>(null);
 const approving = ref(false);
 const rejecting = ref(false);
 const rejectOpen = ref(false);
+const approveAsTest = ref(false);
 const rejectForm = reactive({
   reason: '',
 });
@@ -35,12 +37,6 @@ const statusColorMap: Record<StoreEntryStatus, string> = {
   APPROVED: 'green',
   PENDING: 'orange',
   REJECTED: 'red',
-};
-
-const versionLabelMap: Record<string, string> = {
-  FLAGSHIP: '旗舰版',
-  FREE: '免费版',
-  STANDARD: '标准版',
 };
 
 function formatDateTime(value?: null | string) {
@@ -69,7 +65,11 @@ function statusColor(status?: StoreEntryStatus) {
 }
 
 function versionLabel(code?: string) {
-  return code ? (versionLabelMap[code] ?? code) : '-';
+  return code ? formatVersionLabel(code) : '-';
+}
+
+function versionTagColor(code?: string) {
+  return code ? resolveVersionColor(code) : 'default';
 }
 
 async function fetchDetail() {
@@ -96,8 +96,14 @@ async function handleApprove() {
   }
   approving.value = true;
   try {
-    await approveStoreEntryApplicationApi(detail.value.id);
-    message.success('已通过该入驻申请，机构已启用');
+    await approveStoreEntryApplicationApi(detail.value.id, {
+      isTest: approveAsTest.value,
+    });
+    message.success(
+      approveAsTest.value
+        ? '已通过（测试机构）：可在机构管理中解散或解绑负责人'
+        : '已通过该入驻申请，机构已启用',
+    );
     await fetchDetail();
   } finally {
     approving.value = false;
@@ -136,15 +142,24 @@ onMounted(fetchDetail);
     <a-page-header title="入驻审核详情" class="mb-4 rounded-lg bg-white" @back="goBack">
       <template #extra>
         <template v-if="detail && detail.status === 'PENDING'">
-          <a-popconfirm
-            title="确认通过该门店入驻申请吗？通过后机构将立即启用并创建默认校区。"
-            ok-text="确认通过"
-            cancel-text="取消"
-            @confirm="handleApprove"
-          >
-            <a-button type="primary" :loading="approving">通过审核</a-button>
-          </a-popconfirm>
-          <a-button danger :loading="rejecting" @click="openRejectModal">拒绝</a-button>
+          <a-space>
+            <span class="text-[13px] text-[var(--ant-color-text-secondary)]">
+              <a-checkbox v-model:checked="approveAsTest">标记为测试机构</a-checkbox>
+            </span>
+            <a-popconfirm
+              :title="
+                approveAsTest
+                  ? '确认为测试机构并通过？测试机构可解散清数据或解绑负责人。'
+                  : '确认通过该门店入驻申请吗？通过后机构将立即启用并创建默认校区。'
+              "
+              ok-text="确认通过"
+              cancel-text="取消"
+              @confirm="handleApprove"
+            >
+              <a-button type="primary" :loading="approving">通过审核</a-button>
+            </a-popconfirm>
+            <a-button danger :loading="rejecting" @click="openRejectModal">拒绝</a-button>
+          </a-space>
         </template>
       </template>
     </a-page-header>
@@ -193,7 +208,14 @@ onMounted(fetchDetail);
               {{ detail.organization?.status || '-' }}
             </a-descriptions-item>
             <a-descriptions-item label="版本">
-              {{ versionLabel(detail.organization?.versionCode) }}
+              <a-tag :color="versionTagColor(detail.organization?.versionCode)">
+                {{ versionLabel(detail.organization?.versionCode) }}
+              </a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item label="机构类型">
+              <a-tag :color="detail.organization?.isTest ? 'orange' : 'green'">
+                {{ detail.organization?.isTest ? '测试机构' : '正式机构' }}
+              </a-tag>
             </a-descriptions-item>
             <a-descriptions-item label="机构创建时间">
               {{ formatDateTime(detail.organization?.createdAt) }}

@@ -1,7 +1,7 @@
 import { requestClient } from '#/api/request';
 
-/** 机构版本编码 */
-export type OrganizationVersionCode = 'FREE' | 'STANDARD' | 'FLAGSHIP';
+/** 机构版本编码（可自由扩展，如 TRIAL / FREE / STANDARD / FLAGSHIP / ENTERPRISE） */
+export type OrganizationVersionCode = string;
 
 /** 门店入驻申请状态 */
 export type StoreEntryStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -16,10 +16,20 @@ export interface PaginationResult {
   totalPages: number;
 }
 
-/** 版本功能开关 */
-export interface QuotaFeatures {
-  leadTrace: boolean;
-  batchImportExport: boolean;
+/** 版本功能开关（FeatureModule.code → boolean） */
+export type QuotaFeatures = Record<string, boolean>;
+
+/** 功能模块目录项 */
+export interface FeatureModuleItem {
+  category: string;
+  code: string;
+  createdAt: string;
+  description?: null | string;
+  id: string;
+  name: string;
+  sort: number;
+  status: string;
+  updatedAt: string;
 }
 
 /** 机构当前用量（配额口径） */
@@ -70,6 +80,7 @@ export interface StoreEntryApplicationItem {
   name: string;
   organization?: null | {
     id: string;
+    isTest?: boolean;
     name: string;
     status: OrganizationStatus;
   };
@@ -95,6 +106,7 @@ export interface StoreEntryApplicationDetail extends StoreEntryApplicationItem {
   organization?: null | {
     createdAt: string;
     id: string;
+    isTest?: boolean;
     name: string;
     rejectReason?: null | string;
     status: OrganizationStatus;
@@ -113,6 +125,7 @@ export interface OrganizationItem {
   createdAt: string;
   expireAt?: null | string;
   id: string;
+  isTest: boolean;
   logo?: null | string;
   maxCampuses: number;
   memberCount: number;
@@ -123,7 +136,7 @@ export interface OrganizationItem {
     nickname?: null | string;
     phone?: null | string;
   };
-  ownerId: string;
+  ownerId?: null | string;
   quotaOverrides?: null | {
     features?: QuotaFeatures;
     maxCampuses?: number;
@@ -185,13 +198,17 @@ export function getStoreEntryApplicationDetailApi(id: string) {
   return requestClient.get<StoreEntryApplicationDetail>(`/store-entry/applications/${id}`);
 }
 
-export function approveStoreEntryApplicationApi(id: string) {
+export function approveStoreEntryApplicationApi(
+  id: string,
+  data?: { isTest?: boolean },
+) {
   return requestClient.post<{
     applicationId: string;
     campusId: string;
+    isTest: boolean;
     organizationId: string;
     success: boolean;
-  }>(`/store-entry/applications/${id}/approve`);
+  }>(`/store-entry/applications/${id}/approve`, data ?? {});
 }
 
 export function rejectStoreEntryApplicationApi(id: string, data: { reason: string }) {
@@ -204,6 +221,22 @@ export function getOrganizationVersionsApi(params?: Record<string, unknown>) {
   return requestClient.get<{ list: OrganizationVersionItem[] }>('/organization-versions', {
     params,
   });
+}
+
+export function createOrganizationVersionApi(data: {
+  code: string;
+  description?: null | string;
+  durationDays?: number;
+  features?: QuotaFeatures;
+  maxCampuses?: number;
+  maxEmployees?: number;
+  maxMembers?: number;
+  name: string;
+  price?: number;
+  sort?: number;
+  status?: string;
+}) {
+  return requestClient.post<OrganizationVersionItem>('/organization-versions', data);
 }
 
 export function updateOrganizationVersionApi(
@@ -224,6 +257,32 @@ export function updateOrganizationVersionApi(
   return requestClient.put<OrganizationVersionItem>(`/organization-versions/${code}`, data);
 }
 
+export function updateFeatureMatrixApi(data: {
+  matrix: Record<string, Record<string, boolean>>;
+}) {
+  return requestClient.put<{ list: OrganizationVersionItem[] }>(
+    '/organization-versions/matrix',
+    data,
+  );
+}
+
+export function getFeatureModulesApi() {
+  return requestClient.get<{ list: FeatureModuleItem[] }>('/feature-modules');
+}
+
+export function updateFeatureModuleApi(
+  code: string,
+  data: Partial<{
+    category: string;
+    description?: null | string;
+    name: string;
+    sort: number;
+    status: 'active' | 'disabled';
+  }>,
+) {
+  return requestClient.put<FeatureModuleItem>(`/feature-modules/${code}`, data);
+}
+
 // ==================== 机构列表 / 版本调整 / 配额使用 ====================
 
 export function getOrganizationsApi(params: Record<string, unknown>) {
@@ -240,8 +299,6 @@ export function setOrganizationVersionApi(id: string, data: SetOrganizationVersi
 export function getOrganizationQuotaUsageApi(id: string) {
   return requestClient.get<OrganizationQuotaUsage>(`/organizations/${id}/quota-usage`);
 }
-
-// ==================== 复用现有机构管理 API ====================
 
 export function approveOrganizationApi(id: string) {
   return requestClient.post(`/organizations/${id}/approve`);
@@ -264,4 +321,16 @@ export function adjustOrganizationExpireApi(
   data: { days: number; remark?: null | string },
 ) {
   return requestClient.post(`/organizations/${id}/adjust-expire`, data);
+}
+
+export function setOrganizationIsTestApi(id: string, data: { isTest: boolean }) {
+  return requestClient.post(`/organizations/${id}/is-test`, data);
+}
+
+export function unbindOrganizationOwnerApi(id: string) {
+  return requestClient.post(`/organizations/${id}/unbind-owner`);
+}
+
+export function dissolveOrganizationApi(id: string) {
+  return requestClient.post(`/organizations/${id}/dissolve`);
 }

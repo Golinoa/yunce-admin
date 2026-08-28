@@ -287,12 +287,32 @@ export function testOpsNotifyWebhookApi(data?: { target?: 'approved' | 'review' 
 export function debugOpsNotifySimulateApi(data: {
   scene:
     | 'orgVersionChanged'
+    | 'storeEntrySubmitted'
     | 'storeEntryApproved'
-    | 'storeEntryRejected'
-    | 'storeEntrySubmitted';
+    | 'storeEntryRejected';
+  payload?: Record<string, unknown>;
 }) {
-  return requestClient.post<{ message: string; mode: string; success: boolean }>(
+  return requestClient.post<{ message: string; success: boolean }>(
     '/ops-notify/debug-simulate',
     data,
   );
+}
+
+export type SystemServiceVersion = {
+  key: 'backend' | 'dashboard' | 'miniprogram';
+  name: string;
+  note?: string;
+  version: null | string;
+};
+
+export type SystemVersionsResult = {
+  apiPublicOrigin: string;
+  dashboardPublicOrigin: string;
+  nodeEnv: string;
+  serverTime: string;
+  services: SystemServiceVersion[];
+};
+
+export function getSystemVersionsApi() {
+  return requestClient.get<SystemVersionsResult>('/system/versions');
 }

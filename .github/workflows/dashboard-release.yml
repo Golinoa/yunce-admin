@@ -68,6 +68,8 @@ jobs:
           push: true
           provenance: false
           sbom: false
+          build-args: |
+            DASHBOARD_VERSION=${{ steps.version.outputs.tag }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:latest

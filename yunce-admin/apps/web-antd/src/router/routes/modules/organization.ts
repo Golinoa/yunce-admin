@@ -102,6 +102,26 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    meta: {
+      icon: 'lucide:git-branch',
+      order: 24,
+      title: $t('page.organization.systemVersions'),
+    },
+    name: 'SystemVersions',
+    path: '/operation/system-versions',
+    children: [
+      {
+        name: 'SystemVersionsPage',
+        path: '/operation/system-versions',
+        component: () => import('#/views/operation/system-versions/index.vue'),
+        meta: {
+          icon: 'lucide:git-branch',
+          title: $t('page.organization.systemVersions'),
+        },
+      },
+    ],
+  },
 ];
 
 export default routes;

@@ -13,13 +13,22 @@ import type {
 } from '#/api';
 import {
   adjustOrganizationExpireApi,
+  dissolveOrganizationApi,
   freezeOrganizationApi,
   getOrganizationQuotaUsageApi,
   getOrganizationsApi,
   getOrganizationVersionsApi,
+  setOrganizationIsTestApi,
   setOrganizationVersionApi,
+  unbindOrganizationOwnerApi,
   unfreezeOrganizationApi,
 } from '#/api';
+import {
+  buildVersionSelectOptions,
+  formatVersionLabel,
+  mergeOrganizationVersionCatalog,
+  versionColor as resolveVersionColor,
+} from '#/utils/organization-version';
 
 const loading = ref(false);
 const records = ref<OrganizationItem[]>([]);
@@ -28,6 +37,7 @@ const filters = reactive({
   keyword: '',
   status: undefined as OrganizationStatus | undefined,
   versionCode: undefined as OrganizationVersionCode | undefined,
+  isTest: undefined as boolean | undefined,
 });
 const pagination = reactive({
   page: 1,
@@ -96,23 +106,11 @@ const statusColorMap: Record<OrganizationStatus, string> = {
   REJECTED: 'red',
 };
 
-const versionLabelMap: Record<OrganizationVersionCode, string> = {
-  FREE: '免费版',
-  STANDARD: '标准版',
-  FLAGSHIP: '旗舰版',
-};
+const versionOptions = computed(() => buildVersionSelectOptions(versionDefinitions.value));
 
-const versionColorMap: Record<OrganizationVersionCode, string> = {
-  FREE: 'default',
-  STANDARD: 'blue',
-  FLAGSHIP: 'purple',
-};
-
-const versionOptions = computed(() =>
-  versionDefinitions.value.map((item) => ({
-    label: `${item.name}（${item.code}）`,
-    value: item.code,
-  })),
+const selectedVersionDefaults = computed(
+  () =>
+    versionDefinitions.value.find((item) => item.code === versionForm.versionCode) ?? null,
 );
 
 const tableData = computed(() =>
@@ -147,11 +145,15 @@ function statusColor(status: OrganizationStatus) {
 }
 
 function formatVersion(code: OrganizationVersionCode) {
-  return versionLabelMap[code] ?? code;
+  return formatVersionLabel(code, versionDefinitions.value);
 }
 
 function versionColor(code: OrganizationVersionCode) {
-  return versionColorMap[code] ?? 'default';
+  return resolveVersionColor(code);
+}
+
+function featureLabel(enabled: boolean) {
+  return enabled ? '开' : '关';
 }
 
 async function fetchOrganizations() {
@@ -163,11 +165,22 @@ async function fetchOrganizations() {
       pageSize: pagination.pageSize,
       status: filters.status,
       versionCode: filters.versionCode,
+      isTest: filters.isTest,
     });
     records.value = result.list;
     pagination.total = result.pagination.total;
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadVersionDefinitions() {
+  try {
+    const versionResult = await getOrganizationVersionsApi();
+    versionDefinitions.value = mergeOrganizationVersionCatalog(versionResult.list);
+  } catch {
+    versionDefinitions.value = mergeOrganizationVersionCatalog([]);
+    message.warning('套餐目录加载失败，已使用本地兜底（含 FREE）');
   }
 }
 
@@ -180,11 +193,21 @@ function handleReset() {
   filters.keyword = '';
   filters.status = undefined;
   filters.versionCode = undefined;
+  filters.isTest = undefined;
   pagination.page = 1;
   void fetchOrganizations();
 }
 
 // ==================== 版本调整 ====================
+
+function applyDefaultsFromVersion(code: OrganizationVersionCode) {
+  const defaults = versionDefinitions.value.find((item) => item.code === code) ?? null;
+  versionForm.maxMembers = defaults?.maxMembers ?? 40;
+  versionForm.maxEmployees = defaults?.maxEmployees ?? 2;
+  versionForm.maxCampuses = defaults?.maxCampuses ?? 1;
+  versionForm.leadTrace = defaults?.features?.leadTrace ?? false;
+  versionForm.batchImportExport = defaults?.features?.batchImportExport ?? false;
+}
 
 function prefillVersionForm(org: OrganizationItem) {
   versionForm.versionCode = org.versionCode;
@@ -201,11 +224,7 @@ function prefillVersionForm(org: OrganizationItem) {
       overrides.features?.batchImportExport ?? defaults?.features?.batchImportExport ?? false;
   } else {
     versionForm.enableOverride = false;
-    versionForm.maxMembers = defaults?.maxMembers ?? 40;
-    versionForm.maxEmployees = defaults?.maxEmployees ?? 2;
-    versionForm.maxCampuses = defaults?.maxCampuses ?? 1;
-    versionForm.leadTrace = defaults?.features?.leadTrace ?? false;
-    versionForm.batchImportExport = defaults?.features?.batchImportExport ?? false;
+    applyDefaultsFromVersion(org.versionCode);
   }
 }
 
@@ -216,14 +235,8 @@ function openVersionModal(record: OrganizationItem) {
 }
 
 function handleVersionCodeChange(code: OrganizationVersionCode) {
-  // 切换目标版本时，把配额输入预填为目标版本默认值，便于运营基于默认值做覆盖
   versionForm.versionCode = code;
-  const defaults = versionDefinitions.value.find((item) => item.code === code) ?? null;
-  versionForm.maxMembers = defaults?.maxMembers ?? 40;
-  versionForm.maxEmployees = defaults?.maxEmployees ?? 2;
-  versionForm.maxCampuses = defaults?.maxCampuses ?? 1;
-  versionForm.leadTrace = defaults?.features?.leadTrace ?? false;
-  versionForm.batchImportExport = defaults?.features?.batchImportExport ?? false;
+  applyDefaultsFromVersion(code);
 }
 
 async function submitVersionChange() {
@@ -279,6 +292,24 @@ async function handleUnfreeze(record: OrganizationItem) {
   await fetchOrganizations();
 }
 
+async function handleToggleIsTest(record: OrganizationItem, isTest: boolean) {
+  await setOrganizationIsTestApi(record.id, { isTest });
+  message.success(isTest ? '已标记为测试机构' : '已取消测试机构标记');
+  await fetchOrganizations();
+}
+
+async function handleDissolve(record: OrganizationItem) {
+  await dissolveOrganizationApi(record.id);
+  message.success(`测试机构「${record.name}」已解散，数据已删除`);
+  await fetchOrganizations();
+}
+
+async function handleUnbindOwner(record: OrganizationItem) {
+  await unbindOrganizationOwnerApi(record.id);
+  message.success('负责人已解绑，对方可重新申请入驻其他门店');
+  await fetchOrganizations();
+}
+
 // ==================== 机构详情 / 配额使用率 ====================
 
 async function openQuotaModal(record: OrganizationItem) {
@@ -297,10 +328,6 @@ function usagePercent(current: number, max: number) {
     return 0;
   }
   return Math.min(100, Math.round((current / max) * 100));
-}
-
-function featureLabel(enabled: boolean) {
-  return enabled ? '已开启' : '未开启';
 }
 
 // ==================== 调整有效期 ====================
@@ -335,8 +362,7 @@ async function submitExpireAdjust() {
 }
 
 onMounted(async () => {
-  const versionResult = await getOrganizationVersionsApi();
-  versionDefinitions.value = versionResult.list;
+  await loadVersionDefinitions();
   await fetchOrganizations();
 });
 </script>
@@ -368,7 +394,19 @@ onMounted(async () => {
             allow-clear
             :options="versionOptions"
             placeholder="全部版本"
-            style="width: 150px"
+            style="width: 180px"
+          />
+        </a-form-item>
+        <a-form-item label="类型">
+          <a-select
+            v-model:value="filters.isTest"
+            allow-clear
+            :options="[
+              { label: '正式机构', value: false },
+              { label: '测试机构', value: true },
+            ]"
+            placeholder="全部类型"
+            style="width: 130px"
           />
         </a-form-item>
         <a-form-item>
@@ -401,12 +439,13 @@ onMounted(async () => {
           { title: '机构名称', dataIndex: 'name' },
           { title: '负责人', dataIndex: 'ownerName' },
           { title: '状态', dataIndex: 'status' },
+          { title: '类型', dataIndex: 'isTest' },
           { title: '版本', dataIndex: 'versionCode' },
           { title: '会员数', dataIndex: 'usageMembers' },
           { title: '员工数', dataIndex: 'usageEmployees' },
           { title: '校区数', dataIndex: 'usageCampuses' },
           { title: '到期时间', dataIndex: 'expireAt' },
-          { title: '操作', key: 'action' },
+          { title: '操作', key: 'action', width: 280 },
         ]"
         :data-source="tableData"
         :loading="loading"
@@ -426,6 +465,11 @@ onMounted(async () => {
           <template v-if="column.dataIndex === 'status'">
             <a-tag :color="statusColor(record.status)">
               {{ formatStatus(record.status) }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.dataIndex === 'isTest'">
+            <a-tag :color="record.isTest ? 'orange' : 'default'">
+              {{ record.isTest ? '测试' : '正式' }}
             </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'versionCode'">
@@ -467,6 +511,44 @@ onMounted(async () => {
               <a-button type="link" size="small" @click="openExpireModal(record)">
                 有效期
               </a-button>
+              <a-popconfirm
+                v-if="!record.isTest"
+                :title="`将「${record.name}」标记为测试机构？标记后可解散或解绑负责人`"
+                ok-text="标记"
+                cancel-text="取消"
+                @confirm="handleToggleIsTest(record, true)"
+              >
+                <a-button type="link" size="small">标为测试</a-button>
+              </a-popconfirm>
+              <template v-else>
+                <a-popconfirm
+                  :title="`取消「${record.name}」的测试标记？取消后不可再解散`"
+                  ok-text="取消标记"
+                  cancel-text="返回"
+                  @confirm="handleToggleIsTest(record, false)"
+                >
+                  <a-button type="link" size="small">取消测试</a-button>
+                </a-popconfirm>
+                <a-popconfirm
+                  v-if="record.ownerId"
+                  :title="`解绑「${record.name}」负责人？对方可重新申请入驻，机构将冻结`"
+                  ok-text="解绑"
+                  ok-type="danger"
+                  cancel-text="取消"
+                  @confirm="handleUnbindOwner(record)"
+                >
+                  <a-button danger type="link" size="small">解绑负责人</a-button>
+                </a-popconfirm>
+                <a-popconfirm
+                  :title="`解散测试机构「${record.name}」？将永久删除该机构全部数据，不可恢复`"
+                  ok-text="确认解散"
+                  ok-type="danger"
+                  cancel-text="取消"
+                  @confirm="handleDissolve(record)"
+                >
+                  <a-button danger type="link" size="small">解散</a-button>
+                </a-popconfirm>
+              </template>
             </a-space>
           </template>
         </template>
@@ -483,13 +565,35 @@ onMounted(async () => {
       @ok="submitVersionChange"
     >
       <a-form layout="vertical">
+        <a-form-item v-if="versionTarget" label="当前版本">
+          <a-tag :color="versionColor(versionTarget.versionCode)">
+            {{ formatVersion(versionTarget.versionCode) }}
+          </a-tag>
+        </a-form-item>
         <a-form-item label="目标版本" required>
           <a-select
             v-model:value="versionForm.versionCode"
             :options="versionOptions"
+            placeholder="请选择套餐（含 FREE）"
             @change="handleVersionCodeChange"
           />
         </a-form-item>
+        <a-alert
+          v-if="selectedVersionDefaults"
+          class="mb-4"
+          show-icon
+          type="info"
+        >
+          <template #message>
+            {{ selectedVersionDefaults.name }}（{{ selectedVersionDefaults.code }}）：
+            会员 {{ selectedVersionDefaults.maxMembers }} /
+            员工 {{ selectedVersionDefaults.maxEmployees }} /
+            校区 {{ selectedVersionDefaults.maxCampuses }}；
+            线索溯源 {{ featureLabel(selectedVersionDefaults.features?.leadTrace ?? false) }}，
+            批量导入导出
+            {{ featureLabel(selectedVersionDefaults.features?.batchImportExport ?? false) }}
+          </template>
+        </a-alert>
         <a-form-item>
           <a-switch v-model:checked="versionForm.enableOverride" />
           <span class="ml-2 text-[13px] text-[var(--ant-color-text-secondary)]">
@@ -563,7 +667,11 @@ onMounted(async () => {
           <a-descriptions :column="1" bordered size="small" class="mb-4">
             <a-descriptions-item label="当前版本">
               <a-tag :color="versionColor(quotaDetail.versionCode)">
-                {{ formatVersion(quotaDetail.versionCode) }}
+                {{
+                  quotaDetail.versionName
+                    ? `${quotaDetail.versionName} · ${quotaDetail.versionCode}`
+                    : formatVersion(quotaDetail.versionCode)
+                }}
               </a-tag>
             </a-descriptions-item>
           </a-descriptions>

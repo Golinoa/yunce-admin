@@ -245,13 +245,22 @@ export interface OpsNotifySwitches {
 }
 
 export interface OpsNotifyConfig {
+  approvedChatId: string;
+  callbackUrl: string;
   dashboardOrigin: string;
+  defaultTrialDays: number;
+  defaultTrialPlanId: string;
   enabled: boolean;
+  feishuAppConfigured: boolean;
   hasWebhook: boolean;
+  hasWebhookApproved: boolean;
+  reviewChatId: string;
   switches: OpsNotifySwitches;
   updatedAt: string;
+  webhookApprovedMasked: string;
   webhookMasked: string;
   webhookUrl: string;
+  webhookUrlApproved: string;
 }
 
 export function getOpsNotifyConfigApi() {
@@ -259,13 +268,31 @@ export function getOpsNotifyConfigApi() {
 }
 
 export function updateOpsNotifyConfigApi(data: {
+  approvedChatId?: null | string;
+  defaultTrialDays?: number;
+  defaultTrialPlanId?: null | string;
   enabled?: boolean;
+  reviewChatId?: null | string;
   switches?: Partial<OpsNotifySwitches>;
   webhookUrl?: null | string;
+  webhookUrlApproved?: null | string;
 }) {
   return requestClient.put<OpsNotifyConfig>('/ops-notify/config', data);
 }
 
-export function testOpsNotifyWebhookApi() {
-  return requestClient.post<{ message: string; success: boolean }>('/ops-notify/test');
+export function testOpsNotifyWebhookApi(data?: { target?: 'approved' | 'review' }) {
+  return requestClient.post<{ message: string; success: boolean }>('/ops-notify/test', data ?? {});
+}
+
+export function debugOpsNotifySimulateApi(data: {
+  scene:
+    | 'orgVersionChanged'
+    | 'storeEntryApproved'
+    | 'storeEntryRejected'
+    | 'storeEntrySubmitted';
+}) {
+  return requestClient.post<{ message: string; mode: string; success: boolean }>(
+    '/ops-notify/debug-simulate',
+    data,
+  );
 }

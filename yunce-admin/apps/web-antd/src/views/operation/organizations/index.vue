@@ -546,7 +546,7 @@ onMounted(async () => {
           v-if="versionForm.enableOverride"
           show-icon
           type="info"
-          message="自定义覆盖仅影响该机构；如需全局调整请到「版本配置」修改版本默认值"
+          message="自定义覆盖仅影响该机构；如需全局调整请到「套餐限额」修改默认配额与功能开关"
         />
       </a-form>
     </a-modal>

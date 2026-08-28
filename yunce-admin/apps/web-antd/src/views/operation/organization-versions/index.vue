@@ -128,7 +128,7 @@ async function submitEdit() {
       price: editForm.price,
       status: editForm.status,
     });
-    message.success(`版本「${editForm.name}」已更新`);
+    message.success(`套餐「${editForm.name}」限额已更新`);
     editOpen.value = false;
     await fetchVersions();
   } finally {
@@ -141,9 +141,9 @@ onMounted(fetchVersions);
 
 <template>
   <div class="p-5">
-    <a-card title="版本配置" :bordered="false">
+    <a-card title="套餐限额" :bordered="false">
       <div class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]">
-        版本配额与功能开关全局配置，保存后立即生效；机构维度覆盖调整请到「机构管理」页。免费版按产品口径固定（40 会员 / 2 员工 / 1 校区，禁线索溯源、禁批量导入导出）
+        为机构会员套餐（FREE / STANDARD / FLAGSHIP）配置<strong>用量配额</strong>与<strong>功能开关</strong>，同页编辑、保存即生效。单机构覆盖请到「机构管理」。免费版按产品口径固定（40 会员 / 2 员工 / 1 校区；禁线索溯源、禁批量导入导出）。
       </div>
 
       <a-table
@@ -204,7 +204,7 @@ onMounted(fetchVersions);
 
     <a-modal
       v-model:open="editOpen"
-      :title="`编辑版本：${editTarget?.name ?? ''}`"
+      :title="`编辑套餐限额：${editTarget?.name ?? ''}`"
       ok-text="保存"
       cancel-text="取消"
       :confirm-loading="editing"
@@ -212,10 +212,10 @@ onMounted(fetchVersions);
       @ok="submitEdit"
     >
       <a-form layout="vertical">
-        <a-form-item label="版本名称" required>
+        <a-form-item label="套餐名称" required>
           <a-input v-model:value="editForm.name" :maxlength="50" />
         </a-form-item>
-        <a-form-item label="版本描述">
+        <a-form-item label="套餐描述">
           <a-textarea
             v-model:value="editForm.description"
             :maxlength="200"
@@ -223,6 +223,8 @@ onMounted(fetchVersions);
             placeholder="选填，如：免费版：40 会员 / 2 员工 / 1 校区"
           />
         </a-form-item>
+
+        <a-divider orientation="left" plain>用量配额</a-divider>
         <a-row :gutter="16">
           <a-col :span="8">
             <a-form-item label="会员数上限" required>
@@ -255,6 +257,22 @@ onMounted(fetchVersions);
             </a-form-item>
           </a-col>
         </a-row>
+
+        <a-divider orientation="left" plain>功能开关</a-divider>
+        <a-form-item>
+          <a-space :size="24">
+            <span>
+              <a-switch v-model:checked="editForm.leadTrace" size="small" />
+              <span class="ml-2">线索溯源</span>
+            </span>
+            <span>
+              <a-switch v-model:checked="editForm.batchImportExport" size="small" />
+              <span class="ml-2">批量导入导出</span>
+            </span>
+          </a-space>
+        </a-form-item>
+
+        <a-divider orientation="left" plain>售卖信息</a-divider>
         <a-row :gutter="16">
           <a-col :span="8">
             <a-form-item label="价格（元/年）">
@@ -283,18 +301,6 @@ onMounted(fetchVersions);
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item label="功能开关">
-          <a-space :size="24">
-            <span>
-              <a-switch v-model:checked="editForm.leadTrace" size="small" />
-              <span class="ml-2">线索溯源</span>
-            </span>
-            <span>
-              <a-switch v-model:checked="editForm.batchImportExport" size="small" />
-              <span class="ml-2">批量导入导出</span>
-            </span>
-          </a-space>
-        </a-form-item>
       </a-form>
     </a-modal>
   </div>

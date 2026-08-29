@@ -68,13 +68,25 @@ onMounted(fetchAuditLogs);
       <a-card title="审计日志" :bordered="false">
         <a-form layout="inline" class="mb-4">
           <a-form-item label="模块">
-            <a-input v-model:value="filters.module" allow-clear placeholder="如 membership" />
+            <a-input
+              v-model:value="filters.module"
+              allow-clear
+              placeholder="如 membership"
+            />
           </a-form-item>
           <a-form-item label="动作">
-            <a-input v-model:value="filters.action" allow-clear placeholder="如 CREATE" />
+            <a-input
+              v-model:value="filters.action"
+              allow-clear
+              placeholder="如 CREATE"
+            />
           </a-form-item>
           <a-form-item label="关键字">
-            <a-input v-model:value="filters.keyword" allow-clear placeholder="详情、目标ID、管理员" />
+            <a-input
+              v-model:value="filters.keyword"
+              allow-clear
+              placeholder="详情、目标ID、管理员"
+            />
           </a-form-item>
           <a-form-item>
             <a-space>
@@ -91,7 +103,7 @@ onMounted(fetchAuditLogs);
             { title: '模块', dataIndex: 'module', width: 140 },
             { title: '动作', dataIndex: 'action', width: 140 },
             { title: '目标 ID', dataIndex: 'targetId', width: 220 },
-            { title: '详情', dataIndex: 'detail' }
+            { title: '详情', dataIndex: 'detail' },
           ]"
           :data-source="records"
           :loading="loading"
@@ -103,13 +115,15 @@ onMounted(fetchAuditLogs);
               pagination.page = page;
               pagination.pageSize = pageSize;
               fetchAuditLogs();
-            }
+            },
           }"
           row-key="id"
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'adminUser'">
-              {{ record.adminUser?.nickname || record.adminUser?.username || '-' }}
+              {{
+                record.adminUser?.nickname || record.adminUser?.username || '-'
+              }}
             </template>
             <template v-else-if="column.dataIndex === 'targetId'">
               {{ record.targetId || '-' }}

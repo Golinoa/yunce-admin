@@ -87,7 +87,7 @@ export function normalizeOrganizationVersion(
 
 /** 合并接口列表与兜底目录；接口有的档位全部保留，缺省档位补齐 */
 export function mergeOrganizationVersionCatalog(
-  list: OrganizationVersionItem[] | null | undefined,
+  list: null | OrganizationVersionItem[] | undefined,
 ): OrganizationVersionItem[] {
   const byCode = new Map(
     (list ?? []).map((item) => [item.code, normalizeOrganizationVersion(item)]),
@@ -113,7 +113,9 @@ export function mergeOrganizationVersionCatalog(
       });
     }
   }
-  return [...byCode.values()].sort((a, b) => a.sort - b.sort || a.code.localeCompare(b.code));
+  return [...byCode.values()].toSorted(
+    (a, b) => a.sort - b.sort || a.code.localeCompare(b.code),
+  );
 }
 
 export function versionColor(code: OrganizationVersionCode | string) {
@@ -129,7 +131,8 @@ export function versionName(
     return fromCatalog;
   }
   return (
-    DEFAULT_ORGANIZATION_VERSIONS.find((item) => item.code === code)?.name ?? String(code)
+    DEFAULT_ORGANIZATION_VERSIONS.find((item) => item.code === code)?.name ??
+    String(code)
   );
 }
 

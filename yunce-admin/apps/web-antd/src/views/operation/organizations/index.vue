@@ -1,8 +1,4 @@
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue';
-
-import { message } from 'ant-design-vue';
-
 import type {
   OrganizationItem,
   OrganizationQuotaUsage,
@@ -11,6 +7,11 @@ import type {
   OrganizationVersionItem,
   OverLimitResult,
 } from '#/api';
+
+import { computed, onMounted, reactive, ref } from 'vue';
+
+import { message } from 'ant-design-vue';
+
 import {
   adjustOrganizationExpireApi,
   dissolveOrganizationApi,
@@ -47,9 +48,9 @@ const pagination = reactive({
 
 /** 降配超限提示（Q8：存量保留、禁止新增） */
 const overLimitNotice = ref<null | {
-  members: boolean;
-  employees: boolean;
   campuses: boolean;
+  employees: boolean;
+  members: boolean;
   name: string;
 }>(null);
 
@@ -106,17 +107,22 @@ const statusColorMap: Record<OrganizationStatus, string> = {
   REJECTED: 'red',
 };
 
-const versionOptions = computed(() => buildVersionSelectOptions(versionDefinitions.value));
+const versionOptions = computed(() =>
+  buildVersionSelectOptions(versionDefinitions.value),
+);
 
 const selectedVersionDefaults = computed(
   () =>
-    versionDefinitions.value.find((item) => item.code === versionForm.versionCode) ?? null,
+    versionDefinitions.value.find(
+      (item) => item.code === versionForm.versionCode,
+    ) ?? null,
 );
 
 const tableData = computed(() =>
   records.value.map((item) => ({
     ...item,
-    ownerName: item.owner?.name || item.owner?.nickname || item.owner?.phone || '-',
+    ownerName:
+      item.owner?.name || item.owner?.nickname || item.owner?.phone || '-',
     usageMembers: item.quotaUsage?.members ?? 0,
     usageEmployees: item.quotaUsage?.employees ?? 0,
     usageCampuses: item.quotaUsage?.campuses ?? 0,
@@ -177,7 +183,9 @@ async function fetchOrganizations() {
 async function loadVersionDefinitions() {
   try {
     const versionResult = await getOrganizationVersionsApi();
-    versionDefinitions.value = mergeOrganizationVersionCatalog(versionResult.list);
+    versionDefinitions.value = mergeOrganizationVersionCatalog(
+      versionResult.list,
+    );
   } catch {
     versionDefinitions.value = [];
     message.error('套餐目录加载失败，版本变更已禁用，请稍后重试');
@@ -201,27 +209,35 @@ function handleReset() {
 // ==================== 版本调整 ====================
 
 function applyDefaultsFromVersion(code: OrganizationVersionCode) {
-  const defaults = versionDefinitions.value.find((item) => item.code === code) ?? null;
+  const defaults =
+    versionDefinitions.value.find((item) => item.code === code) ?? null;
   versionForm.maxMembers = defaults?.maxMembers ?? 40;
   versionForm.maxEmployees = defaults?.maxEmployees ?? 2;
   versionForm.maxCampuses = defaults?.maxCampuses ?? 1;
   versionForm.leadTrace = defaults?.features?.leadTrace ?? false;
-  versionForm.batchImportExport = defaults?.features?.batchImportExport ?? false;
+  versionForm.batchImportExport =
+    defaults?.features?.batchImportExport ?? false;
 }
 
 function prefillVersionForm(org: OrganizationItem) {
   versionForm.versionCode = org.versionCode;
   const overrides = org.quotaOverrides;
   const defaults =
-    versionDefinitions.value.find((item) => item.code === org.versionCode) ?? null;
+    versionDefinitions.value.find((item) => item.code === org.versionCode) ??
+    null;
   if (overrides) {
     versionForm.enableOverride = true;
     versionForm.maxMembers = overrides.maxMembers ?? defaults?.maxMembers ?? 40;
-    versionForm.maxEmployees = overrides.maxEmployees ?? defaults?.maxEmployees ?? 2;
-    versionForm.maxCampuses = overrides.maxCampuses ?? defaults?.maxCampuses ?? 1;
-    versionForm.leadTrace = overrides.features?.leadTrace ?? defaults?.features?.leadTrace ?? false;
+    versionForm.maxEmployees =
+      overrides.maxEmployees ?? defaults?.maxEmployees ?? 2;
+    versionForm.maxCampuses =
+      overrides.maxCampuses ?? defaults?.maxCampuses ?? 1;
+    versionForm.leadTrace =
+      overrides.features?.leadTrace ?? defaults?.features?.leadTrace ?? false;
     versionForm.batchImportExport =
-      overrides.features?.batchImportExport ?? defaults?.features?.batchImportExport ?? false;
+      overrides.features?.batchImportExport ??
+      defaults?.features?.batchImportExport ??
+      false;
   } else {
     versionForm.enableOverride = false;
     applyDefaultsFromVersion(org.versionCode);
@@ -264,7 +280,7 @@ async function submitVersionChange() {
         : undefined,
     });
     versionModalOpen.value = false;
-    const overLimit: undefined | OverLimitResult = result?.overLimit;
+    const overLimit: OverLimitResult | undefined = result?.overLimit;
     if (overLimit?.overLimit) {
       overLimitNotice.value = {
         members: overLimit.members,
@@ -272,7 +288,9 @@ async function submitVersionChange() {
         campuses: overLimit.campuses,
         name: versionTarget.value.name,
       };
-      message.warning('版本已调整，但降配后存在存量超出：已保留存量数据，禁止新增');
+      message.warning(
+        '版本已调整，但降配后存在存量超出：已保留存量数据，禁止新增',
+      );
     } else {
       message.success('版本已调整并立即生效');
     }
@@ -486,10 +504,18 @@ onMounted(async () => {
           </template>
           <template v-else-if="column.key === 'action'">
             <a-space :size="4" wrap>
-              <a-button type="link" size="small" @click="openQuotaModal(record)">
+              <a-button
+                type="link"
+                size="small"
+                @click="openQuotaModal(record)"
+              >
                 详情
               </a-button>
-              <a-button type="link" size="small" @click="openVersionModal(record)">
+              <a-button
+                type="link"
+                size="small"
+                @click="openVersionModal(record)"
+              >
                 调整版本
               </a-button>
               <template v-if="record.status === 'FROZEN'">
@@ -512,7 +538,11 @@ onMounted(async () => {
                   <a-button danger type="link" size="small">冻结</a-button>
                 </a-popconfirm>
               </template>
-              <a-button type="link" size="small" @click="openExpireModal(record)">
+              <a-button
+                type="link"
+                size="small"
+                @click="openExpireModal(record)"
+              >
                 有效期
               </a-button>
               <a-popconfirm
@@ -541,7 +571,9 @@ onMounted(async () => {
                   cancel-text="取消"
                   @confirm="handleUnbindOwner(record)"
                 >
-                  <a-button danger type="link" size="small">解绑负责人</a-button>
+                  <a-button danger type="link" size="small">
+                    解绑负责人
+                  </a-button>
                 </a-popconfirm>
                 <a-popconfirm
                   :title="`解散测试机构「${record.name}」？将永久删除该机构全部数据，不可恢复`"
@@ -589,13 +621,21 @@ onMounted(async () => {
           type="info"
         >
           <template #message>
-            {{ selectedVersionDefaults.name }}（{{ selectedVersionDefaults.code }}）：
-            会员 {{ selectedVersionDefaults.maxMembers }} /
-            员工 {{ selectedVersionDefaults.maxEmployees }} /
-            校区 {{ selectedVersionDefaults.maxCampuses }}；
-            线索溯源 {{ featureLabel(selectedVersionDefaults.features?.leadTrace ?? false) }}，
-            批量导入导出
-            {{ featureLabel(selectedVersionDefaults.features?.batchImportExport ?? false) }}
+            {{ selectedVersionDefaults.name }}（{{
+              selectedVersionDefaults.code
+            }}）： 会员 {{ selectedVersionDefaults.maxMembers }} / 员工
+            {{ selectedVersionDefaults.maxEmployees }} / 校区
+            {{ selectedVersionDefaults.maxCampuses }}； 线索溯源
+            {{
+              featureLabel(
+                selectedVersionDefaults.features?.leadTrace ?? false,
+              )
+            }}， 批量导入导出
+            {{
+              featureLabel(
+                selectedVersionDefaults.features?.batchImportExport ?? false,
+              )
+            }}
           </template>
         </a-alert>
         <a-form-item>
@@ -640,11 +680,17 @@ onMounted(async () => {
           <a-form-item label="功能开关">
             <a-space :size="24">
               <span>
-                <a-switch v-model:checked="versionForm.leadTrace" size="small" />
+                <a-switch
+                  v-model:checked="versionForm.leadTrace"
+                  size="small"
+                />
                 <span class="ml-2">线索溯源</span>
               </span>
               <span>
-                <a-switch v-model:checked="versionForm.batchImportExport" size="small" />
+                <a-switch
+                  v-model:checked="versionForm.batchImportExport"
+                  size="small"
+                />
                 <span class="ml-2">批量导入导出</span>
               </span>
             </a-space>
@@ -684,12 +730,22 @@ onMounted(async () => {
             <div class="mb-3">
               <div class="mb-1 flex justify-between text-[13px]">
                 <span>会员</span>
-                <span>{{ quotaDetail.currentMembers }} / {{ quotaDetail.maxMembers }}</span>
+                <span
+                  >{{ quotaDetail.currentMembers }} /
+                  {{ quotaDetail.maxMembers }}</span
+                >
               </div>
               <a-progress
-                :percent="usagePercent(quotaDetail.currentMembers, quotaDetail.maxMembers)"
+                :percent="
+                  usagePercent(
+                    quotaDetail.currentMembers,
+                    quotaDetail.maxMembers,
+                  )
+                "
                 :status="
-                  quotaDetail.currentMembers > quotaDetail.maxMembers ? 'exception' : 'normal'
+                  quotaDetail.currentMembers > quotaDetail.maxMembers
+                    ? 'exception'
+                    : 'normal'
                 "
                 size="small"
               />
@@ -697,12 +753,22 @@ onMounted(async () => {
             <div class="mb-3">
               <div class="mb-1 flex justify-between text-[13px]">
                 <span>员工</span>
-                <span>{{ quotaDetail.currentEmployees }} / {{ quotaDetail.maxEmployees }}</span>
+                <span
+                  >{{ quotaDetail.currentEmployees }} /
+                  {{ quotaDetail.maxEmployees }}</span
+                >
               </div>
               <a-progress
-                :percent="usagePercent(quotaDetail.currentEmployees, quotaDetail.maxEmployees)"
+                :percent="
+                  usagePercent(
+                    quotaDetail.currentEmployees,
+                    quotaDetail.maxEmployees,
+                  )
+                "
                 :status="
-                  quotaDetail.currentEmployees > quotaDetail.maxEmployees ? 'exception' : 'normal'
+                  quotaDetail.currentEmployees > quotaDetail.maxEmployees
+                    ? 'exception'
+                    : 'normal'
                 "
                 size="small"
               />
@@ -710,12 +776,22 @@ onMounted(async () => {
             <div>
               <div class="mb-1 flex justify-between text-[13px]">
                 <span>校区</span>
-                <span>{{ quotaDetail.currentCampuses }} / {{ quotaDetail.maxCampuses }}</span>
+                <span
+                  >{{ quotaDetail.currentCampuses }} /
+                  {{ quotaDetail.maxCampuses }}</span
+                >
               </div>
               <a-progress
-                :percent="usagePercent(quotaDetail.currentCampuses, quotaDetail.maxCampuses)"
+                :percent="
+                  usagePercent(
+                    quotaDetail.currentCampuses,
+                    quotaDetail.maxCampuses,
+                  )
+                "
                 :status="
-                  quotaDetail.currentCampuses > quotaDetail.maxCampuses ? 'exception' : 'normal'
+                  quotaDetail.currentCampuses > quotaDetail.maxCampuses
+                    ? 'exception'
+                    : 'normal'
                 "
                 size="small"
               />
@@ -726,7 +802,9 @@ onMounted(async () => {
               {{ featureLabel(quotaDetail.features?.leadTrace ?? false) }}
             </a-descriptions-item>
             <a-descriptions-item label="批量导入导出">
-              {{ featureLabel(quotaDetail.features?.batchImportExport ?? false) }}
+              {{
+                featureLabel(quotaDetail.features?.batchImportExport ?? false)
+              }}
             </a-descriptions-item>
           </a-descriptions>
         </template>

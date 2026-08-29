@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import type { StoreEntryApplicationItem, StoreEntryStatus } from '#/api';
 
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import type { StoreEntryApplicationItem, StoreEntryStatus } from '#/api';
 import { getStoreEntryApplicationsApi } from '#/api';
 
 const router = useRouter();
@@ -98,7 +98,10 @@ function handleReset() {
 }
 
 function openDetail(record: Pick<StoreEntryApplicationItem, 'id'>) {
-  router.push({ path: '/operation/store-entry/detail', query: { id: record.id } });
+  router.push({
+    path: '/operation/store-entry/detail',
+    query: { id: record.id },
+  });
 }
 
 onMounted(fetchApplications);
@@ -133,7 +136,9 @@ onMounted(fetchApplications);
         </a-form-item>
       </a-form>
 
-      <div class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]">
+      <div
+        class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
+      >
         门店负责人在小程序端提交入驻申请后在此审核；通过后机构自动启用（默认免费版）并创建默认校区，拒绝时需填写原因
       </div>
 
@@ -147,7 +152,7 @@ onMounted(fetchApplications);
           { title: '联系电话', dataIndex: 'contactPhone' },
           { title: '审核状态', dataIndex: 'status' },
           { title: '申请时间', dataIndex: 'createdAt' },
-          { title: '操作', key: 'action' }
+          { title: '操作', key: 'action' },
         ]"
         :data-source="tableData"
         :loading="loading"
@@ -159,7 +164,7 @@ onMounted(fetchApplications);
             pagination.page = page;
             pagination.pageSize = pageSize;
             fetchApplications();
-          }
+          },
         }"
         row-key="id"
       >

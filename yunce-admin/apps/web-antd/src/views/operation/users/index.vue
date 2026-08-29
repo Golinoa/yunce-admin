@@ -11,10 +11,10 @@ interface UserRecord {
   createdAt: string;
   id: string;
   inviteCount: number;
-  inviter?: {
+  inviter?: null | {
     nickname?: null | string;
     phone?: null | string;
-  } | null;
+  };
   membershipExpireAt?: null | string;
   membershipPlanName?: null | string;
   membershipStatus: MembershipStatus;
@@ -28,7 +28,7 @@ const loading = ref(false);
 const records = ref<UserRecord[]>([]);
 const detailLoading = ref(false);
 const detailOpen = ref(false);
-const detail = ref<Record<string, any> | null>(null);
+const detail = ref<null | Record<string, any>>(null);
 const adjustOpen = ref(false);
 const filters = reactive({
   keyword: '',
@@ -79,8 +79,8 @@ function formatDateTime(value?: null | string) {
   }).format(new Date(value));
 }
 
-function formatMembershipStatus(value?: null | MembershipStatus) {
-  return value ? membershipStatusLabelMap[value] ?? value : '-';
+function formatMembershipStatus(value?: MembershipStatus | null) {
+  return value ? (membershipStatusLabelMap[value] ?? value) : '-';
 }
 
 function formatDisplayName(record: Pick<UserRecord, 'name' | 'nickname'>) {
@@ -150,7 +150,9 @@ async function handleAdjustPoints() {
   adjustOpen.value = false;
   await Promise.all([
     fetchUsers(),
-    detail.value ? handleOpenDetail({ id: adjustForm.profileId }) : Promise.resolve(),
+    detail.value
+      ? handleOpenDetail({ id: adjustForm.profileId })
+      : Promise.resolve(),
   ]);
 }
 
@@ -185,7 +187,9 @@ onMounted(fetchUsers);
           </a-space>
         </a-form-item>
       </a-form>
-      <div class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]">
+      <div
+        class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
+      >
         用户默认指校长客户，教师、家长、学生只在详情中做机构基础数据查看
       </div>
       <a-table
@@ -200,7 +204,7 @@ onMounted(fetchUsers);
             pagination.page = page;
             pagination.pageSize = pageSize;
             fetchUsers();
-          }
+          },
         }"
         row-key="id"
       >
@@ -216,8 +220,12 @@ onMounted(fetchUsers);
           </template>
           <template v-if="column.key === 'action'">
             <a-space>
-              <a-button type="link" @click="handleOpenDetail(record)">详情</a-button>
-              <a-button type="link" @click="openAdjustModal(record)">调积分</a-button>
+              <a-button type="link" @click="handleOpenDetail(record)">
+                详情
+              </a-button>
+              <a-button type="link" @click="openAdjustModal(record)">
+                调积分
+              </a-button>
             </a-space>
           </template>
         </template>
@@ -229,20 +237,34 @@ onMounted(fetchUsers);
           <a-descriptions-item label="用户名称">
             {{ detail.name || detail.nickname || '-' }}
           </a-descriptions-item>
-          <a-descriptions-item label="手机号">{{ detail.phone || '-' }}</a-descriptions-item>
-          <a-descriptions-item label="会员状态">
-            {{ formatMembershipStatus(detail.membershipGrants?.[0]?.status || 'EXPIRED') }}
+          <a-descriptions-item label="手机号">
+            {{ detail.phone || '-' }}
           </a-descriptions-item>
-          <a-descriptions-item label="积分余额">{{ detail.pointAccount?.balance ?? 0 }}</a-descriptions-item>
+          <a-descriptions-item label="会员状态">
+            {{
+              formatMembershipStatus(
+                detail.membershipGrants?.[0]?.status || 'EXPIRED',
+              )
+            }}
+          </a-descriptions-item>
+          <a-descriptions-item label="积分余额">
+            {{ detail.pointAccount?.balance ?? 0 }}
+          </a-descriptions-item>
           <a-descriptions-item label="邀请人">
             {{ detail.receivedInvite?.inviter?.nickname || '-' }}
           </a-descriptions-item>
-          <a-descriptions-item label="创建时间">{{ formatDateTime(detail.createdAt) }}</a-descriptions-item>
+          <a-descriptions-item label="创建时间">
+            {{ formatDateTime(detail.createdAt) }}
+          </a-descriptions-item>
         </a-descriptions>
         <a-card class="mt-4" size="small" title="机构基础数据">
           <a-descriptions :column="2" bordered size="small">
             <a-descriptions-item label="机构名称">
-              {{ detail?.institutionSummary?.institutionName || detail?.teacher?.institution || '-' }}
+              {{
+                detail?.institutionSummary?.institutionName ||
+                detail?.teacher?.institution ||
+                '-'
+              }}
             </a-descriptions-item>
             <a-descriptions-item label="教师数">
               {{ detail?.institutionSummary?.teacherCount ?? 0 }}
@@ -262,7 +284,7 @@ onMounted(fetchUsers);
               { title: '来源', dataIndex: 'source' },
               { title: '状态', dataIndex: 'status' },
               { title: '开始时间', dataIndex: 'startAt' },
-              { title: '到期时间', dataIndex: 'endAt' }
+              { title: '到期时间', dataIndex: 'endAt' },
             ]"
             :data-source="detail?.membershipGrants || []"
             :pagination="false"
@@ -273,7 +295,11 @@ onMounted(fetchUsers);
               <template v-if="column.dataIndex === 'status'">
                 {{ formatMembershipStatus(record.status) }}
               </template>
-              <template v-else-if="column.dataIndex === 'startAt' || column.dataIndex === 'endAt'">
+              <template
+                v-else-if="
+                  column.dataIndex === 'startAt' || column.dataIndex === 'endAt'
+                "
+              >
                 {{ formatDateTime(record[column.dataIndex]) }}
               </template>
             </template>
@@ -286,7 +312,7 @@ onMounted(fetchUsers);
               { title: '来源', dataIndex: 'source' },
               { title: '积分', dataIndex: 'amount' },
               { title: '余额', dataIndex: 'balanceAfter' },
-              { title: '时间', dataIndex: 'createdAt' }
+              { title: '时间', dataIndex: 'createdAt' },
             ]"
             :data-source="detail?.pointRecords || []"
             :pagination="false"
@@ -302,7 +328,11 @@ onMounted(fetchUsers);
         </a-card>
       </a-spin>
     </a-drawer>
-    <a-modal v-model:open="adjustOpen" title="调整积分" @ok="handleAdjustPoints">
+    <a-modal
+      v-model:open="adjustOpen"
+      title="调整积分"
+      @ok="handleAdjustPoints"
+    >
       <a-form layout="vertical">
         <a-form-item label="用户 ID">
           <a-input v-model:value="adjustForm.profileId" />

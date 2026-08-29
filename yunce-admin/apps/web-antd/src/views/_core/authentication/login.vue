@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { VbenFormSchema } from '@vben/common-ui';
+
 import { computed } from 'vue';
 
 import { AuthenticationLogin, z } from '@vben/common-ui';

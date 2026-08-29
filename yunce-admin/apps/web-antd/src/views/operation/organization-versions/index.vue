@@ -1,9 +1,14 @@
 <script lang="ts" setup>
+import type {
+  FeatureModuleItem,
+  OrganizationVersionItem,
+  QuotaFeatures,
+} from '#/api';
+
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import { message } from 'ant-design-vue';
 
-import type { FeatureModuleItem, OrganizationVersionItem, QuotaFeatures } from '#/api';
 import {
   createOrganizationVersionApi,
   getFeatureModulesApi,
@@ -94,7 +99,11 @@ function formatDateTime(value?: null | string) {
 }
 
 function statusLabel(status: string) {
-  return status === 'active' ? '启用' : status === 'disabled' ? '停用' : status || '-';
+  return status === 'active'
+    ? '启用'
+    : status === 'disabled'
+      ? '停用'
+      : status || '-';
 }
 
 function statusColor(status: string) {
@@ -106,7 +115,10 @@ function enabledFeatureCount(features?: QuotaFeatures) {
   return Object.values(features).filter(Boolean).length;
 }
 
-function rebuildMatrixDraft(versions: OrganizationVersionItem[], modules: FeatureModuleItem[]) {
+function rebuildMatrixDraft(
+  versions: OrganizationVersionItem[],
+  modules: FeatureModuleItem[],
+) {
   const draft: Record<string, Record<string, boolean>> = {};
   for (const v of versions) {
     const row: Record<string, boolean> = {};
@@ -132,7 +144,9 @@ async function fetchAll() {
     records.value = [];
     featureModules.value = [];
     matrixDraft.value = {};
-    message.error('套餐目录加载失败，请检查网络后重试（未使用本地兜底，避免误改）');
+    message.error(
+      '套餐目录加载失败，请检查网络后重试（未使用本地兜底，避免误改）',
+    );
   } finally {
     loading.value = false;
   }
@@ -229,7 +243,11 @@ async function submitCreate() {
   }
 }
 
-function toggleMatrix(versionCode: string, featureCode: string, checked: boolean) {
+function toggleMatrix(
+  versionCode: string,
+  featureCode: string,
+  checked: boolean,
+) {
   if (!matrixDraft.value[versionCode]) {
     matrixDraft.value[versionCode] = {};
   }
@@ -256,9 +274,10 @@ onMounted(fetchAll);
       <div
         class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
       >
-        配置机构 SaaS
-        档位的用量配额，并在下方矩阵中按「档位 × 功能模块」开关授权。保存后即时影响
-        <code>assertFeature</code> / 小程序 entitlements。个人会员套餐请到「会员管理」。
+        配置机构 SaaS 档位的用量配额，并在下方矩阵中按「档位 ×
+        功能模块」开关授权。保存后即时影响
+        <code>assertFeature</code> / 小程序
+        entitlements。个人会员套餐请到「会员管理」。
       </div>
 
       <div class="mb-3 flex justify-end">
@@ -293,10 +312,13 @@ onMounted(fetchAll);
             </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'description'">
-            <span :title="record.description || '-'">{{ record.description || '-' }}</span>
+            <span :title="record.description || '-'">{{
+              record.description || '-'
+            }}</span>
           </template>
           <template v-else-if="column.dataIndex === 'features'">
-            {{ enabledFeatureCount(record.features) }} / {{ activeModules.length || '-' }}
+            {{ enabledFeatureCount(record.features) }} /
+            {{ activeModules.length || '-' }}
           </template>
           <template v-else-if="column.dataIndex === 'status'">
             <a-tag :color="statusColor(record.status)">
@@ -307,7 +329,9 @@ onMounted(fetchAll);
             {{ formatDateTime(record.updatedAt) }}
           </template>
           <template v-else-if="column.key === 'action'">
-            <a-button type="link" size="small" @click="openEdit(record)">编辑配额</a-button>
+            <a-button type="link" size="small" @click="openEdit(record)">
+              编辑配额
+            </a-button>
           </template>
         </template>
       </a-table>
@@ -315,7 +339,9 @@ onMounted(fetchAll);
 
     <a-card title="功能授权矩阵" :bordered="false">
       <template #extra>
-        <a-button type="primary" :loading="savingMatrix" @click="saveMatrix">保存矩阵</a-button>
+        <a-button type="primary" :loading="savingMatrix" @click="saveMatrix">
+          保存矩阵
+        </a-button>
       </template>
       <a-table
         :columns="matrixColumns"
@@ -330,7 +356,9 @@ onMounted(fetchAll);
           <template v-if="column.dataIndex === 'name'">
             <div>
               <div>{{ record.name }}</div>
-              <div class="text-xs text-[var(--ant-color-text-secondary)]">{{ record.code }}</div>
+              <div class="text-xs text-[var(--ant-color-text-secondary)]">
+                {{ record.code }}
+              </div>
             </div>
           </template>
           <template
@@ -342,7 +370,9 @@ onMounted(fetchAll);
           >
             <a-switch
               size="small"
-              :checked="matrixDraft[column.dataIndex as string]?.[record.code] === true"
+              :checked="
+                matrixDraft[column.dataIndex as string]?.[record.code] === true
+              "
               @change="
                 (checked: boolean) =>
                   toggleMatrix(column.dataIndex as string, record.code, checked)
@@ -367,7 +397,11 @@ onMounted(fetchAll);
           <a-input v-model:value="editForm.name" :maxlength="50" />
         </a-form-item>
         <a-form-item label="套餐描述">
-          <a-textarea v-model:value="editForm.description" :maxlength="200" :rows="2" />
+          <a-textarea
+            v-model:value="editForm.description"
+            :maxlength="200"
+            :rows="2"
+          />
         </a-form-item>
         <a-divider orientation="left" plain>用量配额</a-divider>
         <a-row :gutter="16">
@@ -427,12 +461,20 @@ onMounted(fetchAll);
           </a-col>
           <a-col :span="8">
             <a-form-item label="状态">
-              <a-select v-model:value="editForm.status" :options="statusOptions" />
+              <a-select
+                v-model:value="editForm.status"
+                :options="statusOptions"
+              />
             </a-form-item>
           </a-col>
         </a-row>
         <a-form-item label="排序">
-          <a-input-number v-model:value="editForm.sort" :min="0" :precision="0" style="width: 160px" />
+          <a-input-number
+            v-model:value="editForm.sort"
+            :min="0"
+            :precision="0"
+            style="width: 160px"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -459,7 +501,11 @@ onMounted(fetchAll);
           <a-input v-model:value="createForm.name" :maxlength="50" />
         </a-form-item>
         <a-form-item label="套餐描述">
-          <a-textarea v-model:value="createForm.description" :maxlength="200" :rows="2" />
+          <a-textarea
+            v-model:value="createForm.description"
+            :maxlength="200"
+            :rows="2"
+          />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="8">
@@ -517,7 +563,10 @@ onMounted(fetchAll);
           </a-col>
           <a-col :span="8">
             <a-form-item label="状态">
-              <a-select v-model:value="createForm.status" :options="statusOptions" />
+              <a-select
+                v-model:value="createForm.status"
+                :options="statusOptions"
+              />
             </a-form-item>
           </a-col>
         </a-row>

@@ -28,19 +28,19 @@ interface MembershipGrantRecord {
   createdAt: string;
   endAt: string;
   id: string;
-  plan?: {
+  plan?: null | {
     name?: null | string;
-  } | null;
-  profile?: {
+  };
+  profile?: null | {
     id: string;
     name?: null | string;
     nickname?: null | string;
     phone?: null | string;
     role: string;
-    teacher?: {
+    teacher?: null | {
       institution?: null | string;
-    } | null;
-  } | null;
+    };
+  };
   source: MembershipSource;
   startAt: string;
   status: MembershipStatus;
@@ -110,12 +110,12 @@ function formatDateTime(value?: null | string) {
   }).format(new Date(value));
 }
 
-function formatSource(value?: null | MembershipSource) {
-  return value ? sourceLabelMap[value] ?? value : '-';
+function formatSource(value?: MembershipSource | null) {
+  return value ? (sourceLabelMap[value] ?? value) : '-';
 }
 
-function formatStatus(value?: null | MembershipStatus) {
-  return value ? statusLabelMap[value] ?? value : '-';
+function formatStatus(value?: MembershipStatus | null) {
+  return value ? (statusLabelMap[value] ?? value) : '-';
 }
 
 function formatUserName(record: MembershipGrantRecord) {
@@ -213,7 +213,10 @@ async function handleGrantMembership() {
   await fetchData();
 }
 
-async function handleTogglePlanStatus(record: MembershipPlanRecord, checked: boolean) {
+async function handleTogglePlanStatus(
+  record: MembershipPlanRecord,
+  checked: boolean,
+) {
   await updateMembershipPlanApi(record.id, {
     durationDays: record.durationDays,
     isActive: checked,
@@ -243,7 +246,7 @@ async function handleTogglePlanStatus(record: MembershipPlanRecord, checked: boo
             { title: '积分成本', dataIndex: 'pointsCost' },
             { title: '启用', dataIndex: 'isActive' },
             { title: '备注', dataIndex: 'remark' },
-            { title: '创建时间', dataIndex: 'createdAt' }
+            { title: '创建时间', dataIndex: 'createdAt' },
           ]"
           :data-source="plans"
           :loading="loading"
@@ -256,7 +259,9 @@ async function handleTogglePlanStatus(record: MembershipPlanRecord, checked: boo
                 :checked="record.isActive"
                 checked-children="启用"
                 un-checked-children="停用"
-                @change="(checked: boolean) => handleTogglePlanStatus(record, checked)"
+                @change="
+                  (checked: boolean) => handleTogglePlanStatus(record, checked)
+                "
               />
             </template>
             <template v-else-if="column.dataIndex === 'remark'">
@@ -313,7 +318,7 @@ async function handleTogglePlanStatus(record: MembershipPlanRecord, checked: boo
             { title: '状态', dataIndex: 'status' },
             { title: '开始时间', dataIndex: 'startAt' },
             { title: '到期时间', dataIndex: 'endAt' },
-            { title: '发放时间', dataIndex: 'createdAt' }
+            { title: '发放时间', dataIndex: 'createdAt' },
           ]"
           :data-source="grants"
           :loading="loading"
@@ -325,17 +330,23 @@ async function handleTogglePlanStatus(record: MembershipPlanRecord, checked: boo
               pagination.page = page;
               pagination.pageSize = pageSize;
               fetchData();
-            }
+            },
           }"
           row-key="id"
         >
           <template #bodyCell="{ column, record }">
-            <template v-if="JSON.stringify(column.dataIndex) === JSON.stringify(['profile', 'nickname'])">
+            <template
+              v-if="
+                JSON.stringify(column.dataIndex) ===
+                JSON.stringify(['profile', 'nickname'])
+              "
+            >
               {{ formatUserName(record) }}
             </template>
             <template
               v-else-if="
-                JSON.stringify(column.dataIndex) === JSON.stringify(['profile', 'teacher', 'institution'])
+                JSON.stringify(column.dataIndex) ===
+                JSON.stringify(['profile', 'teacher', 'institution'])
               "
             >
               {{ record.profile?.teacher?.institution || '-' }}
@@ -359,16 +370,28 @@ async function handleTogglePlanStatus(record: MembershipPlanRecord, checked: boo
         </a-table>
       </a-card>
     </a-space>
-    <a-modal v-model:open="planOpen" title="新增会员套餐" @ok="handleCreatePlan">
+    <a-modal
+      v-model:open="planOpen"
+      title="新增会员套餐"
+      @ok="handleCreatePlan"
+    >
       <a-form layout="vertical">
         <a-form-item label="套餐名称">
           <a-input v-model:value="planForm.name" />
         </a-form-item>
         <a-form-item label="会员天数">
-          <a-input-number v-model:value="planForm.durationDays" :min="1" class="w-full" />
+          <a-input-number
+            v-model:value="planForm.durationDays"
+            :min="1"
+            class="w-full"
+          />
         </a-form-item>
         <a-form-item label="积分成本">
-          <a-input-number v-model:value="planForm.pointsCost" :min="0" class="w-full" />
+          <a-input-number
+            v-model:value="planForm.pointsCost"
+            :min="0"
+            class="w-full"
+          />
         </a-form-item>
         <a-form-item label="启用状态">
           <a-switch v-model:checked="planForm.isActive" />
@@ -378,10 +401,17 @@ async function handleTogglePlanStatus(record: MembershipPlanRecord, checked: boo
         </a-form-item>
       </a-form>
     </a-modal>
-    <a-modal v-model:open="grantOpen" title="给用户开通会员" @ok="handleGrantMembership">
+    <a-modal
+      v-model:open="grantOpen"
+      title="给用户开通会员"
+      @ok="handleGrantMembership"
+    >
       <a-form layout="vertical">
         <a-form-item label="用户 ID">
-          <a-input v-model:value="grantForm.profileId" placeholder="请输入用户 ID" />
+          <a-input
+            v-model:value="grantForm.profileId"
+            placeholder="请输入用户 ID"
+          />
         </a-form-item>
         <a-alert
           type="info"
@@ -390,7 +420,11 @@ async function handleTogglePlanStatus(record: MembershipPlanRecord, checked: boo
           class="mb-4"
         />
         <a-form-item label="发放天数">
-          <a-input-number v-model:value="grantForm.durationDays" :min="1" class="w-full" />
+          <a-input-number
+            v-model:value="grantForm.durationDays"
+            :min="1"
+            class="w-full"
+          />
         </a-form-item>
         <a-form-item label="发放来源">
           <a-select v-model:value="grantForm.source" :options="sourceOptions" />

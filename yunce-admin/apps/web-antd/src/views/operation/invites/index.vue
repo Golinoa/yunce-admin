@@ -15,8 +15,8 @@ type PointType = 'EARN' | 'SPEND';
 type PointSource =
   | 'INVITE_REWARD'
   | 'INVITEE_REWARD'
-  | 'MEMBERSHIP_EXCHANGE'
-  | 'MANUAL_ADJUST';
+  | 'MANUAL_ADJUST'
+  | 'MEMBERSHIP_EXCHANGE';
 
 interface InviteRuleRecord {
   enabled: boolean;
@@ -31,15 +31,15 @@ interface InviteRuleRecord {
 interface InviteRecord {
   createdAt: string;
   id: string;
-  invitee?: {
+  invitee?: null | {
     createdAt?: string;
     nickname?: null | string;
     phone?: null | string;
-  } | null;
-  inviter?: {
+  };
+  inviter?: null | {
     nickname?: null | string;
     phone?: null | string;
-  } | null;
+  };
 }
 
 interface PointRecord {
@@ -47,10 +47,10 @@ interface PointRecord {
   balanceAfter: number;
   createdAt: string;
   id: string;
-  profile?: {
+  profile?: null | {
     nickname?: null | string;
     phone?: null | string;
-  } | null;
+  };
   source: PointSource;
   type: PointType;
 }
@@ -130,11 +130,11 @@ function formatDateTime(value?: null | string) {
 }
 
 function formatPointType(value?: null | PointType) {
-  return value ? pointTypeLabelMap[value] ?? value : '-';
+  return value ? (pointTypeLabelMap[value] ?? value) : '-';
 }
 
 function formatPointSource(value?: null | PointSource) {
-  return value ? pointSourceLabelMap[value] ?? value : '-';
+  return value ? (pointSourceLabelMap[value] ?? value) : '-';
 }
 
 async function fetchData() {
@@ -252,7 +252,7 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
             { title: '被邀请奖励', dataIndex: 'inviteePointsReward' },
             { title: '启用', dataIndex: 'enabled' },
             { title: '备注', dataIndex: 'remark' },
-            { title: '操作', key: 'action' }
+            { title: '操作', key: 'action' },
           ]"
           :data-source="rules"
           :loading="loading"
@@ -265,14 +265,18 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
                 :checked="record.enabled"
                 checked-children="启用"
                 un-checked-children="停用"
-                @change="(checked: boolean) => handleToggleRule(record, checked)"
+                @change="
+                  (checked: boolean) => handleToggleRule(record, checked)
+                "
               />
             </template>
             <template v-else-if="column.dataIndex === 'remark'">
               {{ record.remark || '-' }}
             </template>
             <template v-else-if="column.key === 'action'">
-              <a-button type="link" @click="handleEditRule(record)">编辑</a-button>
+              <a-button type="link" @click="handleEditRule(record)">
+                编辑
+              </a-button>
             </template>
           </template>
         </a-table>
@@ -289,7 +293,9 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
           </a-form-item>
           <a-form-item>
             <a-space>
-              <a-button type="primary" @click="handleSearchInvites">查询</a-button>
+              <a-button type="primary" @click="handleSearchInvites">
+                查询
+              </a-button>
               <a-button @click="handleResetInvites">重置</a-button>
             </a-space>
           </a-form-item>
@@ -301,7 +307,7 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
             { title: '被邀请人', dataIndex: ['invitee', 'nickname'] },
             { title: '手机号', dataIndex: ['invitee', 'phone'] },
             { title: '被邀请注册', dataIndex: ['invitee', 'createdAt'] },
-            { title: '绑定时间', dataIndex: 'createdAt' }
+            { title: '绑定时间', dataIndex: 'createdAt' },
           ]"
           :data-source="invites"
           :loading="loading"
@@ -313,15 +319,25 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
               invitePagination.page = page;
               invitePagination.pageSize = pageSize;
               fetchData();
-            }
+            },
           }"
           row-key="id"
         >
           <template #bodyCell="{ column, record }">
             <template
-              v-if="column.dataIndex === 'createdAt' || JSON.stringify(column.dataIndex) === JSON.stringify(['invitee', 'createdAt'])"
+              v-if="
+                column.dataIndex === 'createdAt' ||
+                JSON.stringify(column.dataIndex) ===
+                  JSON.stringify(['invitee', 'createdAt'])
+              "
             >
-              {{ formatDateTime(column.dataIndex === 'createdAt' ? record.createdAt : record.invitee?.createdAt) }}
+              {{
+                formatDateTime(
+                  column.dataIndex === 'createdAt'
+                    ? record.createdAt
+                    : record.invitee?.createdAt,
+                )
+              }}
             </template>
           </template>
         </a-table>
@@ -356,7 +372,9 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
           </a-form-item>
           <a-form-item>
             <a-space>
-              <a-button type="primary" @click="handleSearchPoints">查询</a-button>
+              <a-button type="primary" @click="handleSearchPoints">
+                查询
+              </a-button>
               <a-button @click="handleResetPoints">重置</a-button>
             </a-space>
           </a-form-item>
@@ -369,7 +387,7 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
             { title: '来源', dataIndex: 'source' },
             { title: '积分', dataIndex: 'amount' },
             { title: '变更后余额', dataIndex: 'balanceAfter' },
-            { title: '时间', dataIndex: 'createdAt' }
+            { title: '时间', dataIndex: 'createdAt' },
           ]"
           :data-source="pointRecords"
           :loading="loading"
@@ -381,7 +399,7 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
               pointPagination.page = page;
               pointPagination.pageSize = pageSize;
               fetchData();
-            }
+            },
           }"
           row-key="id"
         >
@@ -408,17 +426,29 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
           <a-input v-model:value="ruleForm.name" />
         </a-form-item>
         <a-form-item label="邀请奖励">
-          <a-input-number v-model:value="ruleForm.pointsReward" :min="0" class="w-full" />
+          <a-input-number
+            v-model:value="ruleForm.pointsReward"
+            :min="0"
+            class="w-full"
+          />
         </a-form-item>
         <a-form-item label="被邀请奖励">
-          <a-input-number v-model:value="ruleForm.inviteePointsReward" :min="0" class="w-full" />
+          <a-input-number
+            v-model:value="ruleForm.inviteePointsReward"
+            :min="0"
+            class="w-full"
+          />
         </a-form-item>
         <a-form-item label="启用状态">
           <a-switch v-model:checked="ruleForm.enabled" />
         </a-form-item>
       </a-form>
     </a-modal>
-    <a-modal v-model:open="pointOpen" title="手工调整积分" @ok="handleAdjustPoints">
+    <a-modal
+      v-model:open="pointOpen"
+      title="手工调整积分"
+      @ok="handleAdjustPoints"
+    >
       <a-form layout="vertical">
         <a-form-item label="用户 ID">
           <a-input v-model:value="pointForm.profileId" />

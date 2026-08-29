@@ -4,7 +4,7 @@ import { requestClient } from '#/api/request';
 export type OrganizationVersionCode = string;
 
 /** 门店入驻申请状态 */
-export type StoreEntryStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type StoreEntryStatus = 'APPROVED' | 'PENDING' | 'REJECTED';
 
 /** 机构状态 */
 export type OrganizationStatus = 'ACTIVE' | 'FROZEN' | 'PENDING' | 'REJECTED';
@@ -183,14 +183,16 @@ export interface SetOrganizationVersionResult extends OrganizationItem {
 // ==================== 门店入驻审核（P2 3.4 / R4） ====================
 
 export function getStoreEntryApplicationsApi(params: Record<string, unknown>) {
-  return requestClient.get<{ list: StoreEntryApplicationItem[]; pagination: PaginationResult }>(
-    '/store-entry/applications',
-    { params },
-  );
+  return requestClient.get<{
+    list: StoreEntryApplicationItem[];
+    pagination: PaginationResult;
+  }>('/store-entry/applications', { params });
 }
 
 export function getStoreEntryApplicationDetailApi(id: string) {
-  return requestClient.get<StoreEntryApplicationDetail>(`/store-entry/applications/${id}`);
+  return requestClient.get<StoreEntryApplicationDetail>(
+    `/store-entry/applications/${id}`,
+  );
 }
 
 export function approveStoreEntryApplicationApi(
@@ -206,16 +208,25 @@ export function approveStoreEntryApplicationApi(
   }>(`/store-entry/applications/${id}/approve`, data ?? {});
 }
 
-export function rejectStoreEntryApplicationApi(id: string, data: { reason: string }) {
-  return requestClient.post<{ success: boolean }>(`/store-entry/applications/${id}/reject`, data);
+export function rejectStoreEntryApplicationApi(
+  id: string,
+  data: { reason: string },
+) {
+  return requestClient.post<{ success: boolean }>(
+    `/store-entry/applications/${id}/reject`,
+    data,
+  );
 }
 
 // ==================== 机构版本配置（P2 3.5 / R5/R7） ====================
 
 export function getOrganizationVersionsApi(params?: Record<string, unknown>) {
-  return requestClient.get<{ list: OrganizationVersionItem[] }>('/organization-versions', {
-    params,
-  });
+  return requestClient.get<{ list: OrganizationVersionItem[] }>(
+    '/organization-versions',
+    {
+      params,
+    },
+  );
 }
 
 export function createOrganizationVersionApi(data: {
@@ -231,7 +242,10 @@ export function createOrganizationVersionApi(data: {
   sort?: number;
   status?: string;
 }) {
-  return requestClient.post<OrganizationVersionItem>('/organization-versions', data);
+  return requestClient.post<OrganizationVersionItem>(
+    '/organization-versions',
+    data,
+  );
 }
 
 export function updateOrganizationVersionApi(
@@ -249,7 +263,10 @@ export function updateOrganizationVersionApi(
     status: string;
   }>,
 ) {
-  return requestClient.put<OrganizationVersionItem>(`/organization-versions/${code}`, data);
+  return requestClient.put<OrganizationVersionItem>(
+    `/organization-versions/${code}`,
+    data,
+  );
 }
 
 export function updateFeatureMatrixApi(data: {
@@ -281,18 +298,26 @@ export function updateFeatureModuleApi(
 // ==================== 机构列表 / 版本调整 / 配额使用 ====================
 
 export function getOrganizationsApi(params: Record<string, unknown>) {
-  return requestClient.get<{ list: OrganizationItem[]; pagination: PaginationResult }>(
-    '/organizations',
-    { params },
+  return requestClient.get<{
+    list: OrganizationItem[];
+    pagination: PaginationResult;
+  }>('/organizations', { params });
+}
+
+export function setOrganizationVersionApi(
+  id: string,
+  data: SetOrganizationVersionParams,
+) {
+  return requestClient.post<SetOrganizationVersionResult>(
+    `/organizations/${id}/version`,
+    data,
   );
 }
 
-export function setOrganizationVersionApi(id: string, data: SetOrganizationVersionParams) {
-  return requestClient.post<SetOrganizationVersionResult>(`/organizations/${id}/version`, data);
-}
-
 export function getOrganizationQuotaUsageApi(id: string) {
-  return requestClient.get<OrganizationQuotaUsage>(`/organizations/${id}/quota-usage`);
+  return requestClient.get<OrganizationQuotaUsage>(
+    `/organizations/${id}/quota-usage`,
+  );
 }
 
 export function approveOrganizationApi(id: string) {
@@ -318,7 +343,10 @@ export function adjustOrganizationExpireApi(
   return requestClient.post(`/organizations/${id}/adjust-expire`, data);
 }
 
-export function setOrganizationIsTestApi(id: string, data: { isTest: boolean }) {
+export function setOrganizationIsTestApi(
+  id: string,
+  data: { isTest: boolean },
+) {
   return requestClient.post(`/organizations/${id}/is-test`, data);
 }
 

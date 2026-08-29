@@ -4,8 +4,8 @@ import { onMounted, reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 
 import {
-  batchDeleteActivationCodesApi,
   batchCreateActivationCodesApi,
+  batchDeleteActivationCodesApi,
   getActivationCodesApi,
   getMembershipPlansApi,
   voidActivationCodeApi,
@@ -20,15 +20,15 @@ interface ActivationCodeRecord {
   createdAt: string;
   expiresAt?: null | string;
   id: string;
-  plan?: {
+  plan?: null | {
     name?: null | string;
-  } | null;
+  };
   status: ActivationCodeStatus;
   usedAt?: null | string;
-  usedBy?: {
+  usedBy?: null | {
     nickname?: null | string;
     phone?: null | string;
-  } | null;
+  };
 }
 
 interface MembershipPlanOption {
@@ -112,7 +112,9 @@ async function fetchCodes() {
     pagination.total = result.pagination.total;
     plans.value = planResult;
     selectedRowKeys.value = selectedRowKeys.value.filter((id) =>
-      result.list.some((item: ActivationCodeRecord) => item.id === id && canDeleteCode(item)),
+      result.list.some(
+        (item: ActivationCodeRecord) => item.id === id && canDeleteCode(item),
+      ),
     );
   } finally {
     loading.value = false;
@@ -232,11 +234,19 @@ onMounted(fetchCodes);
           </a-space>
         </a-form-item>
       </a-form>
-      <div class="mb-4 flex items-center justify-between rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3">
+      <div
+        class="mb-4 flex items-center justify-between rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3"
+      >
         <span class="text-[13px] text-[var(--ant-color-text-secondary)]">
-          已选择 {{ selectedRowKeys.length }} 个可删除激活码，仅支持删除未使用或已作废记录
+          已选择
+          {{ selectedRowKeys.length }}
+          个可删除激活码，仅支持删除未使用或已作废记录
         </span>
-        <a-button type="link" :disabled="selectedRowKeys.length === 0" @click="selectedRowKeys = []">
+        <a-button
+          type="link"
+          :disabled="selectedRowKeys.length === 0"
+          @click="selectedRowKeys = []"
+        >
           清空选择
         </a-button>
       </div>
@@ -251,7 +261,7 @@ onMounted(fetchCodes);
           { title: '有效期', dataIndex: 'expiresAt' },
           { title: '使用时间', dataIndex: 'usedAt' },
           { title: '创建时间', dataIndex: 'createdAt' },
-          { title: '操作', key: 'action' }
+          { title: '操作', key: 'action' },
         ]"
         :data-source="records"
         :loading="loading"
@@ -272,7 +282,7 @@ onMounted(fetchCodes);
             pagination.page = page;
             pagination.pageSize = pageSize;
             fetchCodes();
-          }
+          },
         }"
         row-key="id"
       >
@@ -280,7 +290,13 @@ onMounted(fetchCodes);
           <template v-if="column.dataIndex === 'status'">
             {{ formatStatus(record.status) }}
           </template>
-          <template v-else-if="column.dataIndex === 'expiresAt' || column.dataIndex === 'usedAt' || column.dataIndex === 'createdAt'">
+          <template
+            v-else-if="
+              column.dataIndex === 'expiresAt' ||
+              column.dataIndex === 'usedAt' ||
+              column.dataIndex === 'createdAt'
+            "
+          >
             {{ formatDateTime(record[column.dataIndex]) }}
           </template>
           <template v-if="column.key === 'action'">
@@ -290,7 +306,12 @@ onMounted(fetchCodes);
               cancel-text="取消"
               @confirm="handleVoid(record.id)"
             >
-              <a-button :disabled="record.status === 'USED' || record.status === 'VOIDED'" type="link">
+              <a-button
+                :disabled="
+                  record.status === 'USED' || record.status === 'VOIDED'
+                "
+                type="link"
+              >
                 作废
               </a-button>
             </a-popconfirm>
@@ -298,17 +319,30 @@ onMounted(fetchCodes);
         </template>
       </a-table>
     </a-card>
-    <a-modal v-model:open="createOpen" title="批量生成激活码" @ok="handleCreate">
+    <a-modal
+      v-model:open="createOpen"
+      title="批量生成激活码"
+      @ok="handleCreate"
+    >
       <a-form layout="vertical">
         <a-form-item label="会员套餐">
           <a-select v-model:value="createForm.planId" placeholder="请选择套餐">
-            <a-select-option v-for="item in plans" :key="item.id" :value="item.id">
+            <a-select-option
+              v-for="item in plans"
+              :key="item.id"
+              :value="item.id"
+            >
               {{ item.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="数量">
-          <a-input-number v-model:value="createForm.quantity" :min="1" :max="200" class="w-full" />
+          <a-input-number
+            v-model:value="createForm.quantity"
+            :min="1"
+            :max="200"
+            class="w-full"
+          />
         </a-form-item>
         <a-form-item label="批次号">
           <a-input v-model:value="createForm.batchNo" />

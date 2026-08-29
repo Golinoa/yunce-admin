@@ -1,22 +1,26 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue';
+import type { StoreEntryApplicationDetail, StoreEntryStatus } from '#/api';
 
-import { message } from 'ant-design-vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import type { StoreEntryApplicationDetail, StoreEntryStatus } from '#/api';
+import { message } from 'ant-design-vue';
+
 import {
   approveStoreEntryApplicationApi,
   getStoreEntryApplicationDetailApi,
   rejectStoreEntryApplicationApi,
 } from '#/api';
-import { formatVersionLabel, versionColor as resolveVersionColor } from '#/utils/organization-version';
+import {
+  formatVersionLabel,
+  versionColor as resolveVersionColor,
+} from '#/utils/organization-version';
 
 const route = useRoute();
 const router = useRouter();
 
 const loading = ref(false);
-const detail = ref<StoreEntryApplicationDetail | null>(null);
+const detail = ref<null | StoreEntryApplicationDetail>(null);
 const approving = ref(false);
 const rejecting = ref(false);
 const rejectOpen = ref(false);
@@ -52,7 +56,7 @@ function formatDateTime(value?: null | string) {
   }).format(new Date(value));
 }
 
-function regionText(region?: string[] | null) {
+function regionText(region?: null | string[]) {
   return Array.isArray(region) && region.length > 0 ? region.join(' / ') : '-';
 }
 
@@ -139,12 +143,18 @@ onMounted(fetchDetail);
 
 <template>
   <div class="p-5">
-    <a-page-header title="入驻审核详情" class="mb-4 rounded-lg bg-white" @back="goBack">
+    <a-page-header
+      title="入驻审核详情"
+      class="mb-4 rounded-lg bg-white"
+      @back="goBack"
+    >
       <template #extra>
         <template v-if="detail && detail.status === 'PENDING'">
           <a-space>
             <span class="text-[13px] text-[var(--ant-color-text-secondary)]">
-              <a-checkbox v-model:checked="approveAsTest">标记为测试机构</a-checkbox>
+              <a-checkbox v-model:checked="approveAsTest"
+                >标记为测试机构</a-checkbox
+              >
             </span>
             <a-popconfirm
               :title="
@@ -156,7 +166,11 @@ onMounted(fetchDetail);
               cancel-text="取消"
               @confirm="handleApprove"
             >
-              <a-button v-access:code="'ADMIN_STORE_ENTRY'" type="primary" :loading="approving">
+              <a-button
+                v-access:code="'ADMIN_STORE_ENTRY'"
+                type="primary"
+                :loading="approving"
+              >
                 通过审核
               </a-button>
             </a-popconfirm>
@@ -177,18 +191,32 @@ onMounted(fetchDetail);
       <template v-if="detail">
         <a-card title="申请信息" :bordered="false" class="mb-4">
           <a-descriptions :column="2" bordered size="small">
-            <a-descriptions-item label="门店名称">{{ detail.name }}</a-descriptions-item>
-            <a-descriptions-item label="门店类型">{{ detail.type || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="所在地区">{{ regionText(detail.region) }}</a-descriptions-item>
-            <a-descriptions-item label="详细地址">{{ detail.address || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="定位名称">{{ detail.locationName || '-' }}</a-descriptions-item>
+            <a-descriptions-item label="门店名称">
+              {{ detail.name }}
+            </a-descriptions-item>
+            <a-descriptions-item label="门店类型">
+              {{ detail.type || '-' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="所在地区">
+              {{ regionText(detail.region) }}
+            </a-descriptions-item>
+            <a-descriptions-item label="详细地址">
+              {{ detail.address || '-' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="定位名称">
+              {{ detail.locationName || '-' }}
+            </a-descriptions-item>
             <a-descriptions-item label="审核状态">
               <a-tag :color="statusColor(detail.status)">
                 {{ statusLabel(detail.status) }}
               </a-tag>
             </a-descriptions-item>
-            <a-descriptions-item label="申请时间">{{ formatDateTime(detail.createdAt) }}</a-descriptions-item>
-            <a-descriptions-item label="最近更新时间">{{ formatDateTime(detail.updatedAt) }}</a-descriptions-item>
+            <a-descriptions-item label="申请时间">
+              {{ formatDateTime(detail.createdAt) }}
+            </a-descriptions-item>
+            <a-descriptions-item label="最近更新时间">
+              {{ formatDateTime(detail.updatedAt) }}
+            </a-descriptions-item>
             <a-descriptions-item label="拒绝原因" :span="2">
               {{ detail.rejectReason || '-' }}
             </a-descriptions-item>
@@ -203,8 +231,12 @@ onMounted(fetchDetail);
             <a-descriptions-item label="联系电话">
               {{ detail.applicant?.phone || '-' }}
             </a-descriptions-item>
-            <a-descriptions-item label="联系人">{{ detail.contactName || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="联系电话">{{ detail.contactPhone || '-' }}</a-descriptions-item>
+            <a-descriptions-item label="联系人">
+              {{ detail.contactName || '-' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="联系电话">
+              {{ detail.contactPhone || '-' }}
+            </a-descriptions-item>
           </a-descriptions>
         </a-card>
 
@@ -236,7 +268,9 @@ onMounted(fetchDetail);
           <a-descriptions :column="2" bordered size="small">
             <a-descriptions-item label="审核人">
               {{
-                detail.reviewedBy?.nickname || detail.reviewedBy?.username || '-'
+                detail.reviewedBy?.nickname ||
+                detail.reviewedBy?.username ||
+                '-'
               }}
             </a-descriptions-item>
             <a-descriptions-item label="审核时间">

@@ -232,7 +232,9 @@ function handleEditActivity(record: ActivityItem) {
     <a-space direction="vertical" size="middle" class="w-full">
       <a-card title="轮播图管理" :bordered="false">
         <template #extra>
-          <a-button type="primary" @click="openCreateBannerModal">新增轮播图</a-button>
+          <a-button type="primary" @click="openCreateBannerModal">
+            新增轮播图
+          </a-button>
         </template>
         <a-table
           :columns="[
@@ -241,7 +243,7 @@ function handleEditActivity(record: ActivityItem) {
             { title: '跳转值', dataIndex: 'jumpValue' },
             { title: '状态', dataIndex: 'status' },
             { title: '排序', dataIndex: 'sortOrder' },
-            { title: '操作', key: 'action' }
+            { title: '操作', key: 'action' },
           ]"
           :data-source="banners"
           :loading="loading"
@@ -254,18 +256,25 @@ function handleEditActivity(record: ActivityItem) {
                 :checked="record.status === 'ACTIVE'"
                 checked-children="启用"
                 un-checked-children="停用"
-                @change="(checked: boolean) => handleToggleBannerStatus(record, checked)"
+                @change="
+                  (checked: boolean) =>
+                    handleToggleBannerStatus(record, checked)
+                "
               />
             </template>
             <template v-else-if="column.key === 'action'">
-              <a-button type="link" @click="handleEditBanner(record)">编辑</a-button>
+              <a-button type="link" @click="handleEditBanner(record)">
+                编辑
+              </a-button>
             </template>
           </template>
         </a-table>
       </a-card>
       <a-card title="活动管理" :bordered="false">
         <template #extra>
-          <a-button type="primary" @click="openCreateActivityModal">新增活动</a-button>
+          <a-button type="primary" @click="openCreateActivityModal">
+            新增活动
+          </a-button>
         </template>
         <a-table
           :columns="[
@@ -274,7 +283,7 @@ function handleEditActivity(record: ActivityItem) {
             { title: '状态', dataIndex: 'status' },
             { title: '跳转值', dataIndex: 'jumpValue' },
             { title: '排序', dataIndex: 'sortOrder' },
-            { title: '操作', key: 'action' }
+            { title: '操作', key: 'action' },
           ]"
           :data-source="activities"
           :loading="loading"
@@ -294,7 +303,9 @@ function handleEditActivity(record: ActivityItem) {
               }}
             </template>
             <template v-else-if="column.key === 'action'">
-              <a-button type="link" @click="handleEditActivity(record)">编辑</a-button>
+              <a-button type="link" @click="handleEditActivity(record)">
+                编辑
+              </a-button>
             </template>
           </template>
         </a-table>
@@ -315,12 +326,15 @@ function handleEditActivity(record: ActivityItem) {
         <a-form-item label="跳转类型">
           <a-input v-model:value="bannerForm.jumpType" />
         </a-form-item>
-          <a-form-item label="跳转值">
-            <a-input v-model:value="bannerForm.jumpValue" />
-          </a-form-item>
-          <a-form-item label="状态">
-            <a-select v-model:value="bannerForm.status" :options="bannerStatusOptions" />
-          </a-form-item>
+        <a-form-item label="跳转值">
+          <a-input v-model:value="bannerForm.jumpValue" />
+        </a-form-item>
+        <a-form-item label="状态">
+          <a-select
+            v-model:value="bannerForm.status"
+            :options="bannerStatusOptions"
+          />
+        </a-form-item>
         <a-form-item label="排序">
           <a-input-number v-model:value="bannerForm.sortOrder" class="w-full" />
         </a-form-item>
@@ -335,26 +349,32 @@ function handleEditActivity(record: ActivityItem) {
         <a-form-item label="活动标题">
           <a-input v-model:value="activityForm.title" />
         </a-form-item>
-          <a-form-item label="封面地址">
-            <a-input v-model:value="activityForm.coverImageUrl" />
-          </a-form-item>
+        <a-form-item label="封面地址">
+          <a-input v-model:value="activityForm.coverImageUrl" />
+        </a-form-item>
         <a-form-item label="活动摘要">
           <a-input v-model:value="activityForm.summary" />
         </a-form-item>
         <a-form-item label="活动内容">
           <a-textarea v-model:value="activityForm.content" :rows="4" />
         </a-form-item>
-          <a-form-item label="跳转类型">
-            <a-input v-model:value="activityForm.jumpType" />
-          </a-form-item>
-          <a-form-item label="跳转值">
-            <a-input v-model:value="activityForm.jumpValue" />
-          </a-form-item>
-          <a-form-item label="状态">
-            <a-select v-model:value="activityForm.status" :options="activityStatusOptions" />
-          </a-form-item>
+        <a-form-item label="跳转类型">
+          <a-input v-model:value="activityForm.jumpType" />
+        </a-form-item>
+        <a-form-item label="跳转值">
+          <a-input v-model:value="activityForm.jumpValue" />
+        </a-form-item>
+        <a-form-item label="状态">
+          <a-select
+            v-model:value="activityForm.status"
+            :options="activityStatusOptions"
+          />
+        </a-form-item>
         <a-form-item label="排序">
-          <a-input-number v-model:value="activityForm.sortOrder" class="w-full" />
+          <a-input-number
+            v-model:value="activityForm.sortOrder"
+            class="w-full"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

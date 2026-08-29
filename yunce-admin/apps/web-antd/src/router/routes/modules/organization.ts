@@ -74,7 +74,8 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'OrganizationVersionList',
         path: '/operation/organization-versions',
-        component: () => import('#/views/operation/organization-versions/index.vue'),
+        component: () =>
+          import('#/views/operation/organization-versions/index.vue'),
         meta: {
           icon: 'lucide:settings-2',
           title: $t('page.organization.versions'),

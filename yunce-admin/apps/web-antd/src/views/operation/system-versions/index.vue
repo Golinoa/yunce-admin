@@ -1,14 +1,16 @@
 <script lang="ts" setup>
+import type { SystemServiceVersion, SystemVersionsResult } from '#/api';
+
 import { computed, onMounted, ref } from 'vue';
 
 import { message } from 'ant-design-vue';
 
-import type { SystemServiceVersion, SystemVersionsResult } from '#/api';
 import { getSystemVersionsApi } from '#/api';
 
 /** 与发版 tag dashboard-v* 对齐；Docker 构建时由 ARG 注入 */
 const DASHBOARD_RELEASE =
-  (import.meta.env.VITE_DASHBOARD_VERSION as string | undefined)?.trim() || '1.0.4';
+  (import.meta.env.VITE_DASHBOARD_VERSION as string | undefined)?.trim() ||
+  '1.0.4';
 
 const loading = ref(false);
 const remote = ref<null | SystemVersionsResult>(null);
@@ -31,9 +33,13 @@ const rows = computed(() => {
         note: '当前浏览器页面构建版本（VITE_DASHBOARD_VERSION）',
       };
     }
+    let fallbackName = '小程序前端';
+    if (key === 'backend') {
+      fallbackName = '后端 API';
+    }
     return {
       key,
-      name: item?.name ?? (key === 'backend' ? '后端 API' : '小程序前端'),
+      name: item?.name ?? fallbackName,
       version: item?.version || '未配置',
       serverHint: null as null | string,
       note: item?.note ?? '',
@@ -62,7 +68,8 @@ onMounted(fetchVersions);
       <div
         class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
       >
-        对照线上各端发布版本。后端来自 API 进程；运营端来自本页构建注入；小程序需在后端
+        对照线上各端发布版本。后端来自 API
+        进程；运营端来自本页构建注入；小程序需在后端
         <code>.env</code> 配置 <code>MINI_PROGRAM_VERSION</code>（发版后更新）。
       </div>
 

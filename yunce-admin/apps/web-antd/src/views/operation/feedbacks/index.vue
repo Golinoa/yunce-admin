@@ -1,10 +1,15 @@
 <script lang="ts" setup>
+import type { FeedbackHandleStatus, FeedbackItem, FeedbackType } from '#/api';
+
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import { message } from 'ant-design-vue';
 
-import type { FeedbackHandleStatus, FeedbackItem, FeedbackType } from '#/api';
-import { getFeedbackDetailApi, getFeedbacksApi, updateFeedbackHandleApi } from '#/api';
+import {
+  getFeedbackDetailApi,
+  getFeedbacksApi,
+  updateFeedbackHandleApi,
+} from '#/api';
 
 const loading = ref(false);
 const detailLoading = ref(false);
@@ -196,7 +201,9 @@ onMounted(fetchFeedbacks);
         </a-form-item>
       </a-form>
 
-      <div class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]">
+      <div
+        class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
+      >
         小程序端所有已登录用户均可提交反馈，后台统一查看问题描述、图片证据与处理状态
       </div>
 
@@ -209,7 +216,7 @@ onMounted(fetchFeedbacks);
           { title: '图片数', dataIndex: 'imageCount' },
           { title: '处理状态', dataIndex: 'handleStatus' },
           { title: '提交时间', dataIndex: 'createdAt' },
-          { title: '操作', key: 'action' }
+          { title: '操作', key: 'action' },
         ]"
         :data-source="tableData"
         :loading="loading"
@@ -221,7 +228,7 @@ onMounted(fetchFeedbacks);
             pagination.page = page;
             pagination.pageSize = pageSize;
             fetchFeedbacks();
-          }
+          },
         }"
         row-key="id"
       >
@@ -261,13 +268,27 @@ onMounted(fetchFeedbacks);
             <a-descriptions-item label="用户">
               {{ detail.profile.name || detail.profile.nickname || '-' }}
             </a-descriptions-item>
-            <a-descriptions-item label="手机号">{{ detail.profile.phone || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="机构">{{ detail.profile.teacher?.institution || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="反馈类型">{{ formatFeedbackType(detail.type) }}</a-descriptions-item>
-            <a-descriptions-item label="处理状态">{{ formatHandleStatus(detail.handleStatus) }}</a-descriptions-item>
-            <a-descriptions-item label="提交时间">{{ formatDateTime(detail.createdAt) }}</a-descriptions-item>
-            <a-descriptions-item label="联系方式" :span="2">{{ detail.contact || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="问题描述" :span="2">{{ detail.content }}</a-descriptions-item>
+            <a-descriptions-item label="手机号">
+              {{ detail.profile.phone || '-' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="机构">
+              {{ detail.profile.teacher?.institution || '-' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="反馈类型">
+              {{ formatFeedbackType(detail.type) }}
+            </a-descriptions-item>
+            <a-descriptions-item label="处理状态">
+              {{ formatHandleStatus(detail.handleStatus) }}
+            </a-descriptions-item>
+            <a-descriptions-item label="提交时间">
+              {{ formatDateTime(detail.createdAt) }}
+            </a-descriptions-item>
+            <a-descriptions-item label="联系方式" :span="2">
+              {{ detail.contact || '-' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="问题描述" :span="2">
+              {{ detail.content }}
+            </a-descriptions-item>
           </a-descriptions>
 
           <a-card class="mt-4" size="small" title="反馈图片">
@@ -289,7 +310,10 @@ onMounted(fetchFeedbacks);
           <a-card class="mt-4" size="small" title="客诉处理">
             <a-form layout="vertical">
               <a-form-item label="处理状态">
-                <a-select v-model:value="handleForm.handleStatus" :options="handleStatusOptions" />
+                <a-select
+                  v-model:value="handleForm.handleStatus"
+                  :options="handleStatusOptions"
+                />
               </a-form-item>
               <a-form-item label="处理备注">
                 <a-textarea
@@ -302,14 +326,22 @@ onMounted(fetchFeedbacks);
               </a-form-item>
               <a-form-item label="最近处理人">
                 <a-input
-                  :value="detail.handledByAdmin?.nickname || detail.handledByAdmin?.username || '-'"
+                  :value="
+                    detail.handledByAdmin?.nickname ||
+                    detail.handledByAdmin?.username ||
+                    '-'
+                  "
                   disabled
                 />
               </a-form-item>
               <a-form-item label="最近处理时间">
                 <a-input :value="formatDateTime(detail.handledAt)" disabled />
               </a-form-item>
-              <a-button type="primary" :loading="handleSubmitting" @click="submitHandle">
+              <a-button
+                type="primary"
+                :loading="handleSubmitting"
+                @click="submitHandle"
+              >
                 保存处理结果
               </a-button>
             </a-form>

@@ -83,7 +83,7 @@ curl -fsSk -X POST https://dashboard.chancore.cn/api/admin/v1/auth/login \
 ## 环境变量（构建时）
 
 | 变量 | 文件 | 说明 |
-|------|------|------|
+| --- | --- | --- |
 | `VITE_GLOB_API_URL` | `apps/web-antd/.env.production` | `/api/admin/v1` 同源 |
 | `VITE_ROUTER_HISTORY` | 同上 | `hash` 模式 |
 | `VITE_COMPRESS` | 同上 | `gzip` 构建压缩 |

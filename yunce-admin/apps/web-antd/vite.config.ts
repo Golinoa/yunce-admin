@@ -8,7 +8,8 @@ export default defineConfig(async () => {
         proxy: {
           '/api/admin/v1': {
             changeOrigin: true,
-            rewrite: (path) => path.replace(/^\/api\/admin\/v1/, '/api/admin/v1'),
+            rewrite: (path) =>
+              path.replace(/^\/api\/admin\/v1/, '/api/admin/v1'),
             target: 'http://localhost:3000',
             ws: true,
           },

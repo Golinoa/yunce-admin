@@ -47,7 +47,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
    * 刷新token逻辑
    */
   async function doRefreshToken(): Promise<string> {
-    return Promise.reject(new Error('Refresh token is disabled'));
+    throw new Error('Refresh token is disabled');
   }
 
   function formatToken(token: null | string) {

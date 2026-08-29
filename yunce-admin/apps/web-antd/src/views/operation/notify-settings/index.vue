@@ -1,4 +1,10 @@
 <script lang="ts" setup>
+import type {
+  OpsNotifyConfig,
+  OpsNotifyTemplateFields,
+  OpsNotifyTemplateKey,
+} from '#/api';
+
 import { onMounted, reactive, ref } from 'vue';
 
 import { message } from 'ant-design-vue';
@@ -8,9 +14,6 @@ import {
   getOpsNotifyConfigApi,
   testOpsNotifyWebhookApi,
   updateOpsNotifyConfigApi,
-  type OpsNotifyConfig,
-  type OpsNotifyTemplateFields,
-  type OpsNotifyTemplateKey,
 } from '#/api';
 
 const loading = ref(false);
@@ -25,8 +28,8 @@ const config = ref<null | OpsNotifyConfig>(null);
 const TEMPLATE_META: Array<{
   key: OpsNotifyTemplateKey;
   label: string;
-  showTitleTest?: boolean;
   showDetailWebhook?: boolean;
+  showTitleTest?: boolean;
 }> = [
   {
     key: 'storeEntrySubmitted',
@@ -68,7 +71,12 @@ const form = reactive({
   clearActionHmacSecret: false,
   templates: {
     storeEntrySubmitted: { title: '', detail: '', detailWebhook: '' },
-    storeEntryApproved: { title: '', titleTest: '', detail: '', detailWebhook: '' },
+    storeEntryApproved: {
+      title: '',
+      titleTest: '',
+      detail: '',
+      detailWebhook: '',
+    },
     storeEntryRejected: { title: '', detail: '' },
     orgVersionChanged: { title: '', detail: '' },
     feedbackNew: { title: '', detail: '' },
@@ -146,13 +154,22 @@ async function save() {
         feedbackNew: form.feedbackNew,
       },
       feishuAppId: form.feishuAppId.trim() || null,
-      feishuAppSecret: secretPayload(form.feishuAppSecret, form.clearFeishuAppSecret),
+      feishuAppSecret: secretPayload(
+        form.feishuAppSecret,
+        form.clearFeishuAppSecret,
+      ),
       feishuVerificationToken: secretPayload(
         form.feishuVerificationToken,
         form.clearFeishuVerificationToken,
       ),
-      feishuEncryptKey: secretPayload(form.feishuEncryptKey, form.clearFeishuEncryptKey),
-      actionHmacSecret: secretPayload(form.actionHmacSecret, form.clearActionHmacSecret),
+      feishuEncryptKey: secretPayload(
+        form.feishuEncryptKey,
+        form.clearFeishuEncryptKey,
+      ),
+      actionHmacSecret: secretPayload(
+        form.actionHmacSecret,
+        form.clearActionHmacSecret,
+      ),
       templates: form.templates,
     });
     applyConfig(data);
@@ -191,7 +208,9 @@ async function debugSimulate(
     const result = await debugOpsNotifySimulateApi({ scene });
     if (result.success) {
       message.success(
-        result.mode ? `${result.message}（模式: ${result.mode}）` : result.message,
+        result.mode
+          ? `${result.message}（模式: ${result.mode}）`
+          : result.message,
       );
     } else {
       message.error(result.message);
@@ -236,13 +255,19 @@ onMounted(load);
         <a-divider>自建应用凭证（后台配置，优先于环境变量）</a-divider>
 
         <a-form-item label="App ID">
-          <a-input v-model:value="form.feishuAppId" placeholder="cli_xxx" allow-clear />
+          <a-input
+            v-model:value="form.feishuAppId"
+            placeholder="cli_xxx"
+            allow-clear
+          />
         </a-form-item>
         <a-form-item label="App Secret">
           <a-input-password
             v-model:value="form.feishuAppSecret"
             :placeholder="
-              config?.hasFeishuAppSecret ? '已配置（留空不改）' : '未配置，粘贴后保存'
+              config?.hasFeishuAppSecret
+                ? '已配置（留空不改）'
+                : '未配置，粘贴后保存'
             "
             allow-clear
           />
@@ -254,11 +279,16 @@ onMounted(load);
           <a-input-password
             v-model:value="form.feishuVerificationToken"
             :placeholder="
-              config?.hasFeishuVerificationToken ? '已配置（留空不改）' : '事件订阅校验 Token'
+              config?.hasFeishuVerificationToken
+                ? '已配置（留空不改）'
+                : '事件订阅校验 Token'
             "
             allow-clear
           />
-          <a-checkbox v-model:checked="form.clearFeishuVerificationToken" class="mt-1">
+          <a-checkbox
+            v-model:checked="form.clearFeishuVerificationToken"
+            class="mt-1"
+          >
             清除
           </a-checkbox>
         </a-form-item>
@@ -266,7 +296,9 @@ onMounted(load);
           <a-input-password
             v-model:value="form.feishuEncryptKey"
             :placeholder="
-              config?.hasFeishuEncryptKey ? '已配置（留空不改）' : '事件加密密钥（可选）'
+              config?.hasFeishuEncryptKey
+                ? '已配置（留空不改）'
+                : '事件加密密钥（可选）'
             "
             allow-clear
           />
@@ -296,10 +328,18 @@ onMounted(load);
         <a-divider>自建应用群聊（真回调，推荐）</a-divider>
 
         <a-form-item label="审核群 chat_id">
-          <a-input v-model:value="form.reviewChatId" placeholder="oc_xxx" allow-clear />
+          <a-input
+            v-model:value="form.reviewChatId"
+            placeholder="oc_xxx"
+            allow-clear
+          />
         </a-form-item>
         <a-form-item label="履约群 chat_id（可空=同审核群）">
-          <a-input v-model:value="form.approvedChatId" placeholder="oc_xxx" allow-clear />
+          <a-input
+            v-model:value="form.approvedChatId"
+            placeholder="oc_xxx"
+            allow-clear
+          />
         </a-form-item>
         <div
           v-if="config?.callbackUrl"
@@ -307,7 +347,9 @@ onMounted(load);
         >
           <span>回调地址：</span>
           <code class="break-all">{{ config.callbackUrl }}</code>
-          <a-button size="small" type="link" @click="copyCallbackUrl">复制</a-button>
+          <a-button size="small" type="link" @click="copyCallbackUrl">
+            复制
+          </a-button>
         </div>
 
         <a-divider>自定义机器人 Webhook（回退）</a-divider>
@@ -343,7 +385,11 @@ onMounted(load);
           />
         </a-form-item>
         <a-form-item label="无套餐时按天数">
-          <a-input-number v-model:value="form.defaultTrialDays" :min="1" :max="3650" />
+          <a-input-number
+            v-model:value="form.defaultTrialDays"
+            :min="1"
+            :max="3650"
+          />
         </a-form-item>
 
         <a-divider>事件开关</a-divider>
@@ -403,7 +449,10 @@ onMounted(load);
               show-count
             />
           </a-form-item>
-          <a-form-item v-if="meta.showDetailWebhook" label="说明（Webhook 回退）">
+          <a-form-item
+            v-if="meta.showDetailWebhook"
+            label="说明（Webhook 回退）"
+          >
             <a-textarea
               v-model:value="form.templates[meta.key].detailWebhook"
               :maxlength="500"
@@ -415,7 +464,9 @@ onMounted(load);
         </div>
 
         <a-space wrap>
-          <a-button type="primary" :loading="saving" @click="save">保存</a-button>
+          <a-button type="primary" :loading="saving" @click="save">
+            保存
+          </a-button>
           <a-button :loading="testingReview" @click="testSend('review')">
             测试审核通道
           </a-button>
@@ -433,16 +484,28 @@ onMounted(load);
             message="推送与真实业务同结构的样例卡片（假 UUID）。点「同意/发放」会因申请不存在而失败，仅用于验通道与按钮形态。"
           />
           <a-space wrap>
-            <a-button :loading="debugging" @click="debugSimulate('storeEntrySubmitted')">
+            <a-button
+              :loading="debugging"
+              @click="debugSimulate('storeEntrySubmitted')"
+            >
               模拟新入驻卡片
             </a-button>
-            <a-button :loading="debugging" @click="debugSimulate('storeEntryApproved')">
+            <a-button
+              :loading="debugging"
+              @click="debugSimulate('storeEntryApproved')"
+            >
               模拟通过+发试用卡片
             </a-button>
-            <a-button :loading="debugging" @click="debugSimulate('storeEntryRejected')">
+            <a-button
+              :loading="debugging"
+              @click="debugSimulate('storeEntryRejected')"
+            >
               模拟拒绝卡片
             </a-button>
-            <a-button :loading="debugging" @click="debugSimulate('orgVersionChanged')">
+            <a-button
+              :loading="debugging"
+              @click="debugSimulate('orgVersionChanged')"
+            >
               模拟版本变更卡片
             </a-button>
           </a-space>

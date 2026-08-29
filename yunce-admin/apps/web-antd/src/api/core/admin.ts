@@ -10,10 +10,10 @@ export interface DashboardOverview {
     activeInviteRules: number;
     newUsersGrowth: number;
     newUsersInRange: number;
-    totalParents: number;
     totalActivationCodes: number;
     totalInvites: number;
     totalMembers: number;
+    totalParents: number;
     totalStudents: number;
     totalTeachers: number;
     totalUsers: number;
@@ -39,9 +39,9 @@ export interface DashboardOverview {
     processingCount: number;
   };
   membershipAlerts: {
+    expiringIn7Days: number;
     expiringIn15Days: number;
     expiringIn30Days: number;
-    expiringIn7Days: number;
     list: Array<{
       daysLeft: number;
       endAt: string;
@@ -91,7 +91,11 @@ export interface AuditLogItem {
   targetId?: null | string;
 }
 
-export type FeedbackHandleStatus = 'PENDING' | 'PROCESSING' | 'RESOLVED' | 'CLOSED';
+export type FeedbackHandleStatus =
+  | 'CLOSED'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'RESOLVED';
 export type FeedbackType = 'BUG' | 'FEATURE' | 'OTHER';
 
 export interface FeedbackItem {
@@ -101,11 +105,11 @@ export interface FeedbackItem {
   handleRemark?: null | string;
   handleStatus: FeedbackHandleStatus;
   handledAt?: null | string;
-  handledByAdmin?: {
+  handledByAdmin?: null | {
     id: string;
     nickname?: null | string;
     username: string;
-  } | null;
+  };
   id: string;
   images?: null | string[];
   profile: {
@@ -114,25 +118,33 @@ export interface FeedbackItem {
     nickname?: null | string;
     phone?: null | string;
     role: string;
-    teacher?: {
+    teacher?: null | {
       institution?: null | string;
-    } | null;
+    };
   };
   type: FeedbackType;
 }
 
 export function getDashboardOverviewApi(days = 14) {
-  return requestClient.get<DashboardOverview>('/dashboard/overview', { params: { days } });
+  return requestClient.get<DashboardOverview>('/dashboard/overview', {
+    params: { days },
+  });
 }
 
 export function getAuditLogsApi(params: Record<string, unknown>) {
-  return requestClient.get<{ list: AuditLogItem[]; pagination: PaginationResult }>('/audit-logs', {
+  return requestClient.get<{
+    list: AuditLogItem[];
+    pagination: PaginationResult;
+  }>('/audit-logs', {
     params,
   });
 }
 
 export function getFeedbacksApi(params: Record<string, unknown>) {
-  return requestClient.get<{ list: FeedbackItem[]; pagination: PaginationResult }>('/feedbacks', {
+  return requestClient.get<{
+    list: FeedbackItem[];
+    pagination: PaginationResult;
+  }>('/feedbacks', {
     params,
   });
 }
@@ -164,7 +176,10 @@ export function createMembershipPlanApi(data: Record<string, unknown>) {
   return requestClient.post('/membership-plans', data);
 }
 
-export function updateMembershipPlanApi(id: string, data: Record<string, unknown>) {
+export function updateMembershipPlanApi(
+  id: string,
+  data: Record<string, unknown>,
+) {
   return requestClient.put(`/membership-plans/${id}`, data);
 }
 
@@ -200,7 +215,10 @@ export function getInviteRulesApi() {
   return requestClient.get('/invite-rules');
 }
 
-export function saveInviteRuleApi(taskKey: string, data: Record<string, unknown>) {
+export function saveInviteRuleApi(
+  taskKey: string,
+  data: Record<string, unknown>,
+) {
   return requestClient.put(`/invite-rules/${taskKey}`, data);
 }
 
@@ -299,24 +317,31 @@ export function updateOpsNotifyConfigApi(data: {
   feishuVerificationToken?: null | string;
   reviewChatId?: null | string;
   switches?: Partial<OpsNotifySwitches>;
-  templates?: null | Partial<Record<OpsNotifyTemplateKey, OpsNotifyTemplateFields>>;
+  templates?: null | Partial<
+    Record<OpsNotifyTemplateKey, OpsNotifyTemplateFields>
+  >;
   webhookUrl?: null | string;
   webhookUrlApproved?: null | string;
 }) {
   return requestClient.put<OpsNotifyConfig>('/ops-notify/config', data);
 }
 
-export function testOpsNotifyWebhookApi(data?: { target?: 'approved' | 'review' }) {
-  return requestClient.post<{ message: string; success: boolean }>('/ops-notify/test', data ?? {});
+export function testOpsNotifyWebhookApi(data?: {
+  target?: 'approved' | 'review';
+}) {
+  return requestClient.post<{ message: string; success: boolean }>(
+    '/ops-notify/test',
+    data ?? {},
+  );
 }
 
 export function debugOpsNotifySimulateApi(data: {
+  payload?: Record<string, unknown>;
   scene:
     | 'orgVersionChanged'
-    | 'storeEntrySubmitted'
     | 'storeEntryApproved'
-    | 'storeEntryRejected';
-  payload?: Record<string, unknown>;
+    | 'storeEntryRejected'
+    | 'storeEntrySubmitted';
 }) {
   return requestClient.post<{
     message: string;

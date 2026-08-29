@@ -1,12 +1,13 @@
 <script lang="ts" setup>
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
+import type { DashboardOverview } from '#/api';
+
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 
-import type { DashboardOverview } from '#/api';
 import { getDashboardOverviewApi } from '#/api';
 
 interface OverviewCardItem {
@@ -116,7 +117,9 @@ function resolveFeedbackTypeLabel(type: 'BUG' | 'FEATURE' | 'OTHER') {
   return '其他反馈';
 }
 
-function resolveHandleStatusLabel(status: 'CLOSED' | 'PENDING' | 'PROCESSING' | 'RESOLVED') {
+function resolveHandleStatusLabel(
+  status: 'CLOSED' | 'PENDING' | 'PROCESSING' | 'RESOLVED',
+) {
   if (status === 'PENDING') {
     return '待处理';
   }
@@ -129,7 +132,9 @@ function resolveHandleStatusLabel(status: 'CLOSED' | 'PENDING' | 'PROCESSING' | 
   return '已关闭';
 }
 
-function resolveHandleStatusColor(status: 'CLOSED' | 'PENDING' | 'PROCESSING' | 'RESOLVED') {
+function resolveHandleStatusColor(
+  status: 'CLOSED' | 'PENDING' | 'PROCESSING' | 'RESOLVED',
+) {
   if (status === 'PENDING') {
     return 'red';
   }
@@ -181,7 +186,9 @@ async function fetchOverview() {
 
 const cards = computed(() => overview.value?.cards ?? null);
 const feedbackAlerts = computed(() => overview.value?.feedbackAlerts ?? null);
-const membershipAlerts = computed(() => overview.value?.membershipAlerts ?? null);
+const membershipAlerts = computed(
+  () => overview.value?.membershipAlerts ?? null,
+);
 const retention = computed(() => overview.value?.retention ?? null);
 
 const trendRows = computed<TrendRow[]>(() => {
@@ -199,7 +206,9 @@ const membershipRate = computed(() => {
 
 const activationUsageRate = computed(() => {
   const current = cards.value;
-  return current ? toPercent(current.usedActivationCodes, current.totalActivationCodes) : 0;
+  return current
+    ? toPercent(current.usedActivationCodes, current.totalActivationCodes)
+    : 0;
 });
 
 const inviteRate = computed(() => {
@@ -208,16 +217,21 @@ const inviteRate = computed(() => {
 });
 
 const totalActionVolume = computed(() => {
-  return trendRows.value.reduce((sum, item) => sum + item.total, 0);
+  let sum = 0;
+  for (const item of trendRows.value) {
+    sum += item.total;
+  }
+  return sum;
 });
 
 const peakDay = computed(() => {
-  return trendRows.value.reduce<null | TrendRow>((current, item) => {
+  let current: null | TrendRow = null;
+  for (const item of trendRows.value) {
     if (!current || item.total > current.total) {
-      return item;
+      current = item;
     }
-    return current;
-  }, null);
+  }
+  return current;
 });
 
 const overviewCards = computed<OverviewCardItem[]>(() => {
@@ -365,7 +379,9 @@ const insightList = computed<InsightItem[]>(() => {
       key: 'peak-day',
       title: '业务峰值日',
       value: peakDay.value?.date ?? '-',
-      description: peakDay.value ? `单日动作 ${formatNumber(peakDay.value.total)}` : '暂无趋势数据',
+      description: peakDay.value
+        ? `单日动作 ${formatNumber(peakDay.value.total)}`
+        : '暂无趋势数据',
     },
     {
       key: 'scale',
@@ -550,11 +566,13 @@ const feedbackWorkbenchMetrics = computed<WorkbenchMetricItem[]>(() => {
 
 const topTrendRows = computed(() => {
   return [...trendRows.value]
-    .sort((a, b) => b.total - a.total)
+    .toSorted((a, b) => b.total - a.total)
     .slice(0, 5)
     .map((item) => ({
       ...item,
-      share: totalActionVolume.value ? Number(((item.total / totalActionVolume.value) * 100).toFixed(2)) : 0,
+      share: totalActionVolume.value
+        ? Number(((item.total / totalActionVolume.value) * 100).toFixed(2))
+        : 0,
     }));
 });
 
@@ -686,7 +704,13 @@ async function renderCharts() {
         axisTick: {
           show: false,
         },
-        data: ['用户开通率', '激活码使用率', '邀请渗透率', '次日留存', '7 日留存'],
+        data: [
+          '用户开通率',
+          '激活码使用率',
+          '邀请渗透率',
+          '次日留存',
+          '7 日留存',
+        ],
         type: 'category',
       },
     }),
@@ -747,7 +771,8 @@ onMounted(async () => {
           <div class="max-w-[760px]">
             <div class="hero-title">运营看板</div>
             <div class="hero-subtitle">
-              按用户口径观察校长客户的开通、拉新、激活码和机构基础规模，用更符合 B 端后台的方式呈现经营状态。
+              按用户口径观察校长客户的开通、拉新、激活码和机构基础规模，用更符合
+              B 端后台的方式呈现经营状态。
             </div>
             <div class="hero-meta">
               <span>统计窗口：近 {{ windowDays }} 天</span>
@@ -756,15 +781,30 @@ onMounted(async () => {
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-3">
-            <a-segmented v-model:value="windowDays" :options="windowOptions" @change="fetchOverview" />
+            <a-segmented
+              v-model:value="windowDays"
+              :options="windowOptions"
+              @change="fetchOverview"
+            />
             <a-button type="primary" @click="fetchOverview">刷新看板</a-button>
           </div>
         </div>
       </a-card>
 
       <a-row :gutter="[16, 16]">
-        <a-col v-for="item in overviewCards" :key="item.key" :xs="24" :sm="12" :xl="6">
-          <a-card :bordered="false" class="overview-card" :loading="loading" :style="{ '--card-accent': item.color }">
+        <a-col
+          v-for="item in overviewCards"
+          :key="item.key"
+          :xs="24"
+          :sm="12"
+          :xl="6"
+        >
+          <a-card
+            :bordered="false"
+            class="overview-card"
+            :loading="loading"
+            :style="{ '--card-accent': item.color }"
+          >
             <div class="overview-card__label">{{ item.label }}</div>
             <div class="overview-card__value">{{ item.value }}</div>
             <div class="overview-card__tip">{{ item.tip }}</div>
@@ -774,7 +814,11 @@ onMounted(async () => {
 
       <a-card :bordered="false" class="summary-strip" :loading="loading">
         <div class="summary-strip__grid">
-          <div v-for="item in summaryMetrics" :key="item.key" class="summary-strip__item">
+          <div
+            v-for="item in summaryMetrics"
+            :key="item.key"
+            class="summary-strip__item"
+          >
             <div class="summary-strip__label">{{ item.label }}</div>
             <div class="summary-strip__value">{{ item.value }}</div>
           </div>
@@ -786,22 +830,38 @@ onMounted(async () => {
           <a-card :bordered="false" class="chart-card" :loading="loading">
             <template #title>会员到期预警</template>
             <template #extra>
-              <a-button type="link" @click="goTo('/operation/memberships')">查看会员管理</a-button>
+              <a-button type="link" @click="goTo('/operation/memberships')">
+                查看会员管理
+              </a-button>
             </template>
             <div class="workbench-metrics">
-              <div v-for="item in membershipWorkbenchMetrics" :key="item.key" class="workbench-metric">
+              <div
+                v-for="item in membershipWorkbenchMetrics"
+                :key="item.key"
+                class="workbench-metric"
+              >
                 <div class="workbench-metric__label">{{ item.label }}</div>
                 <div class="workbench-metric__value">{{ item.value }}</div>
               </div>
             </div>
             <div class="task-list">
-              <div v-for="item in membershipAlerts?.list ?? []" :key="item.id" class="task-item">
+              <div
+                v-for="item in membershipAlerts?.list ?? []"
+                :key="item.id"
+                class="task-item"
+              >
                 <div class="task-item__header">
                   <div class="task-item__title-wrap">
-                    <span class="task-item__title">{{ resolveDisplayName(item.profile) }}</span>
-                    <a-tag color="gold">{{ resolveDaysLeftText(item.daysLeft) }}</a-tag>
+                    <span class="task-item__title">{{
+                      resolveDisplayName(item.profile)
+                    }}</span>
+                    <a-tag color="gold">
+                      {{ resolveDaysLeftText(item.daysLeft) }}
+                    </a-tag>
                   </div>
-                  <span class="task-item__meta">到期时间 {{ formatDateTime(item.endAt) }}</span>
+                  <span class="task-item__meta"
+                    >到期时间 {{ formatDateTime(item.endAt) }}</span
+                  >
                 </div>
                 <div class="task-item__desc">
                   <span>机构 {{ item.profile.institution || '-' }}</span>
@@ -821,24 +881,38 @@ onMounted(async () => {
           <a-card :bordered="false" class="chart-card" :loading="loading">
             <template #title>待处理反馈</template>
             <template #extra>
-              <a-button type="link" @click="goTo('/operation/feedbacks')">查看反馈中心</a-button>
+              <a-button type="link" @click="goTo('/operation/feedbacks')">
+                查看反馈中心
+              </a-button>
             </template>
             <div class="workbench-metrics">
-              <div v-for="item in feedbackWorkbenchMetrics" :key="item.key" class="workbench-metric">
+              <div
+                v-for="item in feedbackWorkbenchMetrics"
+                :key="item.key"
+                class="workbench-metric"
+              >
                 <div class="workbench-metric__label">{{ item.label }}</div>
                 <div class="workbench-metric__value">{{ item.value }}</div>
               </div>
             </div>
             <div class="task-list">
-              <div v-for="item in feedbackAlerts?.list ?? []" :key="item.id" class="task-item">
+              <div
+                v-for="item in feedbackAlerts?.list ?? []"
+                :key="item.id"
+                class="task-item"
+              >
                 <div class="task-item__header">
                   <div class="task-item__title-wrap">
-                    <span class="task-item__title">{{ resolveDisplayName(item.profile) }}</span>
+                    <span class="task-item__title">{{
+                      resolveDisplayName(item.profile)
+                    }}</span>
                     <a-tag :color="resolveHandleStatusColor(item.handleStatus)">
                       {{ resolveHandleStatusLabel(item.handleStatus) }}
                     </a-tag>
                   </div>
-                  <span class="task-item__meta">{{ resolveFeedbackTypeLabel(item.type) }}</span>
+                  <span class="task-item__meta">{{
+                    resolveFeedbackTypeLabel(item.type)
+                  }}</span>
                 </div>
                 <div class="task-item__content">{{ item.content }}</div>
                 <div class="task-item__desc">
@@ -859,7 +933,12 @@ onMounted(async () => {
 
       <a-row :gutter="[16, 16]">
         <a-col :xs="24" :xl="15">
-          <a-card title="运营决策提示" :bordered="false" class="chart-card" :loading="loading">
+          <a-card
+            title="运营决策提示"
+            :bordered="false"
+            class="chart-card"
+            :loading="loading"
+          >
             <div class="alert-list">
               <div v-for="item in alertList" :key="item.key" class="alert-item">
                 <div class="alert-item__header">
@@ -874,7 +953,15 @@ onMounted(async () => {
                     ></span>
                     <span class="alert-item__title">{{ item.title }}</span>
                   </div>
-                  <a-tag :color="item.level === 'high' ? 'red' : item.level === 'medium' ? 'orange' : 'blue'">
+                  <a-tag
+                    :color="
+                      item.level === 'high'
+                        ? 'red'
+                        : item.level === 'medium'
+                          ? 'orange'
+                          : 'blue'
+                    "
+                  >
                     {{ item.metric }}
                   </a-tag>
                 </div>
@@ -884,7 +971,12 @@ onMounted(async () => {
           </a-card>
         </a-col>
         <a-col :xs="24" :xl="9">
-          <a-card title="快捷入口" :bordered="false" class="chart-card" :loading="loading">
+          <a-card
+            title="快捷入口"
+            :bordered="false"
+            class="chart-card"
+            :loading="loading"
+          >
             <div class="quick-grid">
               <button
                 v-for="item in quickActions"
@@ -907,7 +999,9 @@ onMounted(async () => {
           <a-card :bordered="false" class="chart-card" :loading="loading">
             <template #title>核心趋势</template>
             <template #extra>
-              <span class="chart-card__extra">新增用户、开通、激活码使用与邀请关系按日趋势</span>
+              <span class="chart-card__extra"
+                >新增用户、开通、激活码使用与邀请关系按日趋势</span
+              >
             </template>
             <EchartsUI ref="trendChartRef" height="360px" />
           </a-card>
@@ -934,15 +1028,32 @@ onMounted(async () => {
           </a-card>
         </a-col>
         <a-col :xs="24" :xl="8">
-          <a-card title="运营健康度" :bordered="false" class="chart-card" :loading="loading">
+          <a-card
+            title="运营健康度"
+            :bordered="false"
+            class="chart-card"
+            :loading="loading"
+          >
             <div class="health-list">
-              <div v-for="item in healthMetrics" :key="item.key" class="health-item">
+              <div
+                v-for="item in healthMetrics"
+                :key="item.key"
+                class="health-item"
+              >
                 <div class="flex items-center justify-between gap-3">
                   <div>
                     <div class="health-item__label">{{ item.label }}</div>
                     <div class="health-item__tip">{{ item.tip }}</div>
                   </div>
-                  <a-tag :color="item.status === 'success' ? 'green' : item.status === 'normal' ? 'blue' : 'red'">
+                  <a-tag
+                    :color="
+                      item.status === 'success'
+                        ? 'green'
+                        : item.status === 'normal'
+                          ? 'blue'
+                          : 'red'
+                    "
+                  >
                     {{ formatPercent(item.value) }}
                   </a-tag>
                 </div>
@@ -957,9 +1068,18 @@ onMounted(async () => {
           </a-card>
         </a-col>
         <a-col :xs="24" :xl="8">
-          <a-card title="经营提示" :bordered="false" class="chart-card" :loading="loading">
+          <a-card
+            title="经营提示"
+            :bordered="false"
+            class="chart-card"
+            :loading="loading"
+          >
             <div class="insight-list">
-              <div v-for="item in insightList" :key="item.key" class="insight-item">
+              <div
+                v-for="item in insightList"
+                :key="item.key"
+                class="insight-item"
+              >
                 <div class="insight-item__header">
                   <span class="insight-item__title">{{ item.title }}</span>
                   <span class="insight-item__value">{{ item.value }}</span>
@@ -973,14 +1093,30 @@ onMounted(async () => {
 
       <a-row :gutter="[16, 16]">
         <a-col :xs="24" :xl="8">
-          <a-card title="高峰日期排行" :bordered="false" class="chart-card" :loading="loading">
+          <a-card
+            title="高峰日期排行"
+            :bordered="false"
+            class="chart-card"
+            :loading="loading"
+          >
             <div class="rank-list">
-              <div v-for="item in topTrendRows" :key="item.date" class="rank-item">
+              <div
+                v-for="item in topTrendRows"
+                :key="item.date"
+                class="rank-item"
+              >
                 <div class="rank-item__header">
                   <span class="rank-item__date">{{ item.date }}</span>
-                  <span class="rank-item__total">{{ formatNumber(item.total) }}</span>
+                  <span class="rank-item__total">{{
+                    formatNumber(item.total)
+                  }}</span>
                 </div>
-                <a-progress :percent="item.share" :show-info="false" size="small" stroke-color="#1677ff" />
+                <a-progress
+                  :percent="item.share"
+                  :show-info="false"
+                  size="small"
+                  stroke-color="#1677ff"
+                />
                 <div class="rank-item__meta">
                   <span>新增 {{ formatNumber(item.users) }}</span>
                   <span>开通 {{ formatNumber(item.members) }}</span>
@@ -995,7 +1131,9 @@ onMounted(async () => {
           <a-card :bordered="false" class="chart-card" :loading="loading">
             <template #title>运营趋势明细</template>
             <template #extra>
-              <span class="chart-card__extra">保留明细表，便于运营按日核对</span>
+              <span class="chart-card__extra"
+                >保留明细表，便于运营按日核对</span
+              >
             </template>
             <a-table
               :columns="[
@@ -1004,7 +1142,7 @@ onMounted(async () => {
                 { title: '开通用户', dataIndex: 'members', width: 110 },
                 { title: '激活码使用', dataIndex: 'activation', width: 120 },
                 { title: '邀请关系', dataIndex: 'invites', width: 100 },
-                { title: '动作总量', dataIndex: 'total', width: 110 }
+                { title: '动作总量', dataIndex: 'total', width: 110 },
               ]"
               :data-source="trendRows"
               :loading="loading"
@@ -1014,7 +1152,9 @@ onMounted(async () => {
             >
               <template #bodyCell="{ column, record }">
                 <template v-if="column.dataIndex === 'total'">
-                  <span class="font-semibold text-[var(--ant-color-text)]">{{ formatNumber(record.total) }}</span>
+                  <span class="font-semibold text-[var(--ant-color-text)]">{{
+                    formatNumber(record.total)
+                  }}</span>
                 </template>
               </template>
             </a-table>
@@ -1027,23 +1167,31 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard-page {
-  background: linear-gradient(180deg, rgb(247 249 252 / 100%) 0%, rgb(244 246 250 / 100%) 100%);
   min-height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgb(247 249 252 / 100%) 0%,
+    rgb(244 246 250 / 100%) 100%
+  );
 }
 
 .hero-panel {
+  position: relative;
+  overflow: hidden;
   border: 1px solid rgb(22 119 255 / 12%);
   box-shadow: 0 16px 40px rgb(15 23 42 / 6%);
-  overflow: hidden;
-  position: relative;
 }
 
 .hero-panel::before {
-  background: linear-gradient(90deg, rgb(22 119 255 / 10%) 0%, rgb(114 46 209 / 6%) 100%);
-  content: '';
+  position: absolute;
   inset: 0;
   pointer-events: none;
-  position: absolute;
+  content: '';
+  background: linear-gradient(
+    90deg,
+    rgb(22 119 255 / 10%) 0%,
+    rgb(114 46 209 / 6%) 100%
+  );
 }
 
 .hero-title,
@@ -1054,26 +1202,26 @@ onMounted(async () => {
 }
 
 .hero-title {
-  color: var(--ant-color-text);
   font-size: 24px;
   font-weight: 700;
+  color: var(--ant-color-text);
 }
 
 .hero-subtitle {
-  color: var(--ant-color-text-secondary);
+  max-width: 720px;
+  margin-top: 10px;
   font-size: 13px;
   line-height: 22px;
-  margin-top: 10px;
-  max-width: 720px;
+  color: var(--ant-color-text-secondary);
 }
 
 .hero-meta {
-  color: var(--ant-color-text-tertiary);
   display: flex;
   flex-wrap: wrap;
-  font-size: 12px;
   gap: 16px;
   margin-top: 18px;
+  font-size: 12px;
+  color: var(--ant-color-text-tertiary);
 }
 
 .overview-card,
@@ -1084,18 +1232,22 @@ onMounted(async () => {
 }
 
 .overview-card {
+  position: relative;
   min-height: 156px;
   overflow: hidden;
-  position: relative;
 }
 
 .overview-card::before {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0%) 0%, rgb(255 255 255 / 100%) 100%);
-  border-top: 3px solid var(--card-accent);
-  content: '';
+  position: absolute;
   inset: 0;
   pointer-events: none;
-  position: absolute;
+  content: '';
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0%) 0%,
+    rgb(255 255 255 / 100%) 100%
+  );
+  border-top: 3px solid var(--card-accent);
 }
 
 .overview-card__label,
@@ -1106,81 +1258,81 @@ onMounted(async () => {
 }
 
 .overview-card__label {
-  color: var(--ant-color-text-secondary);
   font-size: 13px;
+  color: var(--ant-color-text-secondary);
 }
 
 .overview-card__value {
-  color: var(--ant-color-text);
+  margin-top: 18px;
   font-size: 32px;
   font-weight: 700;
   line-height: 1.2;
-  margin-top: 18px;
+  color: var(--ant-color-text);
 }
 
 .overview-card__tip {
-  color: var(--ant-color-text-tertiary);
-  font-size: 12px;
   margin-top: 10px;
+  font-size: 12px;
+  color: var(--ant-color-text-tertiary);
 }
 
 .summary-strip__grid {
   display: grid;
-  gap: 16px;
   grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .summary-strip__item {
-  border-right: 1px solid var(--ant-color-border-secondary);
   padding-right: 12px;
+  border-right: 1px solid var(--ant-color-border-secondary);
 }
 
 .summary-strip__item:last-child {
-  border-right: none;
   padding-right: 0;
+  border-right: none;
 }
 
 .summary-strip__label {
-  color: var(--ant-color-text-secondary);
   font-size: 12px;
+  color: var(--ant-color-text-secondary);
 }
 
 .summary-strip__value {
-  color: var(--ant-color-text);
+  margin-top: 8px;
   font-size: 22px;
   font-weight: 600;
-  margin-top: 8px;
+  color: var(--ant-color-text);
 }
 
 .chart-card__extra {
-  color: var(--ant-color-text-tertiary);
   font-size: 12px;
+  color: var(--ant-color-text-tertiary);
 }
 
 .workbench-metrics {
   display: grid;
-  gap: 12px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
   margin-bottom: 16px;
 }
 
 .workbench-metric {
+  padding: 14px 16px;
   background: rgb(250 251 253 / 100%);
   border: 1px solid rgb(5 5 5 / 6%);
   border-radius: 12px;
-  padding: 14px 16px;
 }
 
 .workbench-metric__label {
-  color: var(--ant-color-text-secondary);
   font-size: 12px;
+  color: var(--ant-color-text-secondary);
 }
 
 .workbench-metric__value {
-  color: var(--ant-color-text);
+  margin-top: 8px;
   font-size: 24px;
   font-weight: 700;
-  margin-top: 8px;
+  color: var(--ant-color-text);
 }
 
 .task-list {
@@ -1190,53 +1342,53 @@ onMounted(async () => {
 }
 
 .task-item {
+  padding: 14px 16px;
   background: rgb(250 251 253 / 100%);
   border: 1px solid rgb(5 5 5 / 6%);
   border-radius: 12px;
-  padding: 14px 16px;
 }
 
 .task-item__header {
-  align-items: flex-start;
   display: flex;
   gap: 12px;
+  align-items: flex-start;
   justify-content: space-between;
 }
 
 .task-item__title-wrap {
-  align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .task-item__title {
-  color: var(--ant-color-text);
   font-size: 14px;
   font-weight: 600;
+  color: var(--ant-color-text);
 }
 
 .task-item__meta {
-  color: var(--ant-color-text-tertiary);
   font-size: 12px;
+  color: var(--ant-color-text-tertiary);
   white-space: nowrap;
 }
 
 .task-item__content {
-  color: var(--ant-color-text);
+  margin-top: 10px;
   font-size: 13px;
   line-height: 22px;
-  margin-top: 10px;
+  color: var(--ant-color-text);
 }
 
 .task-item__desc {
-  color: var(--ant-color-text-secondary);
   display: flex;
   flex-wrap: wrap;
-  font-size: 12px;
   gap: 12px;
-  line-height: 20px;
   margin-top: 10px;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--ant-color-text-secondary);
 }
 
 .health-list,
@@ -1252,10 +1404,10 @@ onMounted(async () => {
 .insight-item,
 .rank-item,
 .alert-item {
+  padding: 14px 16px;
   background: rgb(250 251 253 / 100%);
   border: 1px solid rgb(5 5 5 / 6%);
   border-radius: 12px;
-  padding: 14px 16px;
 }
 
 .health-item {
@@ -1263,59 +1415,59 @@ onMounted(async () => {
 }
 
 .health-item__label {
-  color: var(--ant-color-text);
   font-size: 13px;
   font-weight: 600;
+  color: var(--ant-color-text);
 }
 
 .health-item__tip {
-  color: var(--ant-color-text-tertiary);
-  font-size: 12px;
   margin-top: 4px;
+  font-size: 12px;
+  color: var(--ant-color-text-tertiary);
 }
 
 .insight-item__header,
 .rank-item__header,
 .alert-item__header {
-  align-items: center;
   display: flex;
+  align-items: center;
   justify-content: space-between;
 }
 
 .insight-item__title,
 .rank-item__date,
 .alert-item__title {
-  color: var(--ant-color-text);
   font-size: 13px;
   font-weight: 600;
+  color: var(--ant-color-text);
 }
 
 .insight-item__value,
 .rank-item__total {
-  color: var(--ant-color-text);
   font-size: 16px;
   font-weight: 700;
+  color: var(--ant-color-text);
 }
 
 .insight-item__desc,
 .rank-item__meta,
 .alert-item__action {
-  color: var(--ant-color-text-secondary);
-  font-size: 12px;
   margin-top: 8px;
+  font-size: 12px;
+  color: var(--ant-color-text-secondary);
 }
 
 .alert-item__title-wrap {
-  align-items: center;
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .alert-item__dot {
-  border-radius: 999px;
   display: inline-flex;
-  height: 8px;
   width: 8px;
+  height: 8px;
+  border-radius: 999px;
 }
 
 .alert-item__dot.is-high {
@@ -1338,17 +1490,17 @@ onMounted(async () => {
 
 .quick-grid {
   display: grid;
-  gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .quick-card {
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
   background: rgb(250 251 253 / 100%);
   border: 1px solid rgb(5 5 5 / 6%);
   border-radius: 12px;
-  cursor: pointer;
-  padding: 16px;
-  text-align: left;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -1362,23 +1514,23 @@ onMounted(async () => {
 }
 
 .quick-card__title {
-  color: var(--ant-color-text);
   font-size: 14px;
   font-weight: 600;
+  color: var(--ant-color-text);
 }
 
 .quick-card__metric {
-  color: var(--ant-color-text);
+  margin-top: 10px;
   font-size: 20px;
   font-weight: 700;
-  margin-top: 10px;
+  color: var(--ant-color-text);
 }
 
 .quick-card__desc {
-  color: var(--ant-color-text-secondary);
+  margin-top: 8px;
   font-size: 12px;
   line-height: 20px;
-  margin-top: 8px;
+  color: var(--ant-color-text-secondary);
 }
 
 @media (max-width: 1400px) {
@@ -1393,8 +1545,8 @@ onMounted(async () => {
   }
 
   .summary-strip__item {
-    border-right: none;
     padding-right: 0;
+    border-right: none;
   }
 
   .quick-grid {

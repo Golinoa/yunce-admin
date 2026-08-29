@@ -179,7 +179,7 @@ else
   echo "==> [bootstrap] dashboard service already in compose"
 fi
 
-# --- 4. .env ---
+# --- 4. .env（只写 DASHBOARD_* / REGISTRY 别名；禁止改写 CORS 等可能含引号的行） ---
 touch .env
 if grep -q '^DASHBOARD_TAG=' .env; then
   sed -i "s/^DASHBOARD_TAG=.*/DASHBOARD_TAG=${TAG}/" .env
@@ -189,19 +189,12 @@ fi
 if ! grep -q '^DASHBOARD_HEALTH_URL=' .env; then
   echo "DASHBOARD_HEALTH_URL=https://dashboard.chancore.cn/health" >> .env
 fi
-if grep -q '^CORS_ORIGINS=' .env; then
-  if ! grep -q 'dashboard.chancore.cn' .env; then
-    sed -i 's|^CORS_ORIGINS=\(.*\)|CORS_ORIGINS=\1,https://dashboard.chancore.cn|' .env
-  fi
-else
-  echo 'CORS_ORIGINS=https://chancore.cn,https://www.chancore.cn,https://dashboard.chancore.cn' >> .env
-fi
 # REGISTRY/NAMESPACE aliases for scripts
 if ! grep -q '^REGISTRY=' .env && grep -q '^ACR_REGISTRY=' .env; then
-  echo "REGISTRY=$(grep '^ACR_REGISTRY=' .env | cut -d= -f2-)" >> .env
+  echo "REGISTRY=$(grep '^ACR_REGISTRY=' .env | cut -d= -f2- | tr -d '\r')" >> .env
 fi
 if ! grep -q '^NAMESPACE=' .env && grep -q '^ACR_NAMESPACE=' .env; then
-  echo "NAMESPACE=$(grep '^ACR_NAMESPACE=' .env | cut -d= -f2-)" >> .env
+  echo "NAMESPACE=$(grep '^ACR_NAMESPACE=' .env | cut -d= -f2- | tr -d '\r')" >> .env
 fi
 echo "==> [bootstrap] .env updated"
 

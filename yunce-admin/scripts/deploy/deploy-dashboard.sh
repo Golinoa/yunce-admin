@@ -22,11 +22,37 @@ TAG="${TAG#dashboard-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-if [ -f "${DEPLOY_DIR}/.env" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "${DEPLOY_DIR}/.env"
-  set +a
+# 只读需要的 KEY=value，禁止 source 整个 .env（密钥/多行值会炸 bash）
+env_get() {
+  local key="$1"
+  local file="$2"
+  local line raw
+  line="$(grep -E "^${key}=" "${file}" | tail -n 1 || true)"
+  [ -n "${line}" ] || return 1
+  raw="${line#*=}"
+  raw="${raw%$'\r'}"
+  if [[ "${raw}" == \"*\" ]]; then
+    raw="${raw:1:${#raw}-2}"
+  elif [[ "${raw}" == \'*\' ]]; then
+    raw="${raw:1:${#raw}-2}"
+  fi
+  printf '%s' "${raw}"
+}
+
+ENV_FILE="${DEPLOY_DIR}/.env"
+if [ -f "${ENV_FILE}" ]; then
+  REGISTRY="$(env_get REGISTRY "${ENV_FILE}" || true)"
+  if [ -z "${REGISTRY}" ]; then
+    REGISTRY="$(env_get ACR_REGISTRY "${ENV_FILE}" || true)"
+  fi
+  NAMESPACE="$(env_get NAMESPACE "${ENV_FILE}" || true)"
+  if [ -z "${NAMESPACE}" ]; then
+    NAMESPACE="$(env_get ACR_NAMESPACE "${ENV_FILE}" || true)"
+  fi
+  DASHBOARD_HEALTH_URL="$(env_get DASHBOARD_HEALTH_URL "${ENV_FILE}" || true)"
+  ACR_REGISTRY_USERNAME="$(env_get ACR_REGISTRY_USERNAME "${ENV_FILE}" || true)"
+  ACR_REGISTRY_PASSWORD="$(env_get ACR_REGISTRY_PASSWORD "${ENV_FILE}" || true)"
+  export REGISTRY NAMESPACE DASHBOARD_HEALTH_URL ACR_REGISTRY_USERNAME ACR_REGISTRY_PASSWORD
 fi
 
 : "${REGISTRY:?REGISTRY 未设置}"

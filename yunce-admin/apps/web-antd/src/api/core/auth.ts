@@ -1,4 +1,4 @@
-import { baseRequestClient, requestClient } from '#/api/request';
+import { requestClient } from '#/api/request';
 
 export namespace AuthApi {
   /** 登录接口参数 */
@@ -36,10 +36,10 @@ export async function changePasswordApi(data: {
 }
 
 /**
- * 退出登录
+ * 退出登录（须带 accessToken，服务端吊销会话）
  */
 export async function logoutApi() {
-  return baseRequestClient.post('/auth/logout');
+  return requestClient.post('/auth/logout');
 }
 
 /**

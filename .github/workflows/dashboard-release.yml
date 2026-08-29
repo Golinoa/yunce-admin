@@ -20,8 +20,31 @@ env:
   IMAGE_NAME: yunce-dashboard
 
 jobs:
+  quality:
+    name: 发版前 typecheck + lint + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: yunce-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: yunce-admin/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @vben/web-antd run typecheck
+      - run: pnpm run lint
+      - run: pnpm run build:antd
+
   build-and-push:
     name: 构建 + 推送 dashboard 镜像
+    needs: [quality]
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.version.outputs.tag }}
@@ -120,3 +143,15 @@ jobs:
             if docker compose -f /opt/yunce/deploy/docker-compose.yml ps backend --status running >/dev/null 2>&1; then
               docker compose -f /opt/yunce/deploy/docker-compose.yml up -d backend || true
             fi
+
+      - name: 发版后 dashboard 健康检查
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" https://dashboard.chancore.cn/health || true)
+            echo "attempt $i -> HTTP $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::dashboard /health 未就绪"
+          exit 1

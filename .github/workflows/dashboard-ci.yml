@@ -6,6 +6,7 @@ on:
     paths:
       - 'yunce-admin/**'
       - '.github/workflows/dashboard-ci.yml'
+      - '.github/workflows/dashboard-release.yml'
   push:
     branches:
       - main
@@ -13,6 +14,7 @@ on:
     paths:
       - 'yunce-admin/**'
       - '.github/workflows/dashboard-ci.yml'
+      - '.github/workflows/dashboard-release.yml'
 
 permissions:
   contents: read
@@ -22,10 +24,10 @@ env:
   TZ: Asia/Shanghai
 
 jobs:
-  build:
-    name: 构建 web-antd + Docker 镜像
+  quality:
+    name: typecheck + lint + build + docker
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: yunce-admin
@@ -47,6 +49,13 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Typecheck web-antd
+        run: pnpm --filter @vben/web-antd run typecheck
+
+      - name: Lint (vsh)
+        run: pnpm run lint
+        continue-on-error: false
 
       - name: Build web-antd
         run: pnpm run build:antd

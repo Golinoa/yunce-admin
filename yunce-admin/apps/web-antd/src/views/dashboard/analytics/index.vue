@@ -40,6 +40,7 @@ interface InsightItem {
 
 interface AlertItem {
   action: string;
+  key: string;
   level: 'high' | 'medium' | 'normal';
   metric: string;
   title: string;
@@ -649,7 +650,6 @@ async function renderCharts() {
       },
       series: [
         {
-          barBorderRadius: [0, 6, 6, 0],
           data: [
             membershipRate.value,
             activationUsageRate.value,
@@ -657,6 +657,9 @@ async function renderCharts() {
             currentRetention?.day1 ?? 0,
             currentRetention?.day7 ?? 0,
           ],
+          itemStyle: {
+            borderRadius: [0, 6, 6, 0],
+          },
           label: {
             formatter: '{c}%',
             position: 'right',

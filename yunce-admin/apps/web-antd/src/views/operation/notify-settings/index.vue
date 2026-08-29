@@ -190,7 +190,9 @@ async function debugSimulate(
     await save();
     const result = await debugOpsNotifySimulateApi({ scene });
     if (result.success) {
-      message.success(`${result.message}（模式: ${result.mode}）`);
+      message.success(
+        result.mode ? `${result.message}（模式: ${result.mode}）` : result.message,
+      );
     } else {
       message.error(result.message);
     }

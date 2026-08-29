@@ -9,12 +9,7 @@ export type StoreEntryStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 /** 机构状态 */
 export type OrganizationStatus = 'ACTIVE' | 'FROZEN' | 'PENDING' | 'REJECTED';
 
-export interface PaginationResult {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-}
+import type { PaginationResult } from './admin';
 
 /** 版本功能开关（FeatureModule.code → boolean） */
 export type QuotaFeatures = Record<string, boolean>;

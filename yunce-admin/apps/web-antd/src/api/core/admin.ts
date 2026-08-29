@@ -318,10 +318,11 @@ export function debugOpsNotifySimulateApi(data: {
     | 'storeEntryRejected';
   payload?: Record<string, unknown>;
 }) {
-  return requestClient.post<{ message: string; success: boolean }>(
-    '/ops-notify/debug-simulate',
-    data,
-  );
+  return requestClient.post<{
+    message: string;
+    mode?: string;
+    success: boolean;
+  }>('/ops-notify/debug-simulate', data);
 }
 
 export type SystemServiceVersion = {

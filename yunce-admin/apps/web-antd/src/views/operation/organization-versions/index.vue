@@ -109,10 +109,11 @@ function enabledFeatureCount(features?: QuotaFeatures) {
 function rebuildMatrixDraft(versions: OrganizationVersionItem[], modules: FeatureModuleItem[]) {
   const draft: Record<string, Record<string, boolean>> = {};
   for (const v of versions) {
-    draft[v.code] = {};
+    const row: Record<string, boolean> = {};
     for (const m of modules) {
-      draft[v.code][m.code] = v.features?.[m.code] === true;
+      row[m.code] = v.features?.[m.code] === true;
     }
+    draft[v.code] = row;
   }
   matrixDraft.value = draft;
 }

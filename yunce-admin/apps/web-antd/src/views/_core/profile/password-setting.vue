@@ -63,9 +63,11 @@ const formSchema = computed((): VbenFormSchema[] => {
 });
 
 async function handleSubmit(values: Record<string, string>) {
+  const oldPassword = values.oldPassword ?? '';
+  const newPassword = values.newPassword ?? '';
   await changePasswordApi({
-    oldPassword: values.oldPassword,
-    newPassword: values.newPassword,
+    oldPassword,
+    newPassword,
   });
   message.success('密码已修改，请重新登录');
   await authStore.logout(true);

@@ -23,6 +23,19 @@ export async function loginApi(data: AuthApi.LoginParams) {
 }
 
 /**
+ * 修改当前管理员密码（成功后需重新登录）
+ */
+export async function changePasswordApi(data: {
+  newPassword: string;
+  oldPassword: string;
+}) {
+  return requestClient.post<{ changed: boolean }>(
+    '/auth/change-password',
+    data,
+  );
+}
+
+/**
  * 退出登录
  */
 export async function logoutApi() {

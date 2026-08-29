@@ -10,13 +10,14 @@ import { useAuthStore } from '#/store';
 defineOptions({ name: 'Login' });
 
 const authStore = useAuthStore();
+const isDev = import.meta.env.DEV;
 
 const formSchema = computed((): VbenFormSchema[] => {
   return [
     {
       component: 'VbenInput',
       componentProps: {
-        defaultValue: 'admin',
+        ...(isDev ? { defaultValue: 'admin' } : {}),
         placeholder: $t('authentication.usernameTip'),
       },
       fieldName: 'username',
@@ -26,7 +27,7 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       component: 'VbenInputPassword',
       componentProps: {
-        defaultValue: 'Admin123456',
+        ...(isDev ? { defaultValue: 'Admin123456' } : {}),
         placeholder: $t('authentication.password'),
       },
       fieldName: 'password',

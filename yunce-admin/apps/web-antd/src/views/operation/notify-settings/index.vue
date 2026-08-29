@@ -16,6 +16,8 @@ const saving = ref(false);
 const testingReview = ref(false);
 const testingApproved = ref(false);
 const debugging = ref(false);
+/** 仅开发构建展示「模拟推送」；生产由后端二次拦截 */
+const showDebugSimulate = import.meta.env.DEV;
 const config = ref<null | OpsNotifyConfig>(null);
 
 const form = reactive({
@@ -234,39 +236,41 @@ onMounted(load);
           </a-button>
         </a-space>
 
-        <a-divider>调试</a-divider>
-        <a-alert
-          class="mb-3"
-          type="warning"
-          show-icon
-          message="推送与真实业务同结构的样例卡片（假 UUID）。点「同意/发放」会因申请不存在而失败，仅用于验通道与按钮形态。"
-        />
-        <a-space wrap>
-          <a-button
-            :loading="debugging"
-            @click="debugSimulate('storeEntrySubmitted')"
-          >
-            模拟新入驻卡片
-          </a-button>
-          <a-button
-            :loading="debugging"
-            @click="debugSimulate('storeEntryApproved')"
-          >
-            模拟通过+发试用卡片
-          </a-button>
-          <a-button
-            :loading="debugging"
-            @click="debugSimulate('storeEntryRejected')"
-          >
-            模拟拒绝卡片
-          </a-button>
-          <a-button
-            :loading="debugging"
-            @click="debugSimulate('orgVersionChanged')"
-          >
-            模拟版本变更卡片
-          </a-button>
-        </a-space>
+        <template v-if="showDebugSimulate">
+          <a-divider>调试</a-divider>
+          <a-alert
+            class="mb-3"
+            type="warning"
+            show-icon
+            message="推送与真实业务同结构的样例卡片（假 UUID）。点「同意/发放」会因申请不存在而失败，仅用于验通道与按钮形态。"
+          />
+          <a-space wrap>
+            <a-button
+              :loading="debugging"
+              @click="debugSimulate('storeEntrySubmitted')"
+            >
+              模拟新入驻卡片
+            </a-button>
+            <a-button
+              :loading="debugging"
+              @click="debugSimulate('storeEntryApproved')"
+            >
+              模拟通过+发试用卡片
+            </a-button>
+            <a-button
+              :loading="debugging"
+              @click="debugSimulate('storeEntryRejected')"
+            >
+              模拟拒绝卡片
+            </a-button>
+            <a-button
+              :loading="debugging"
+              @click="debugSimulate('orgVersionChanged')"
+            >
+              模拟版本变更卡片
+            </a-button>
+          </a-space>
+        </template>
       </a-form>
     </a-card>
   </div>

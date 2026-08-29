@@ -39,13 +39,31 @@ export interface InitStoreOptions {
 /**
  * @zh_CN 初始化pinia
  */
+const PLACEHOLDER_STORE_SECURE_KEYS = new Set([
+  '',
+  'please-replace-me-with-your-own-key',
+]);
+
 export async function initStores(app: App, options: InitStoreOptions) {
   const { createPersistedState } = await import('pinia-plugin-persistedstate');
   pinia = createPinia();
   const { namespace } = options;
+  const encryptionSecret = String(
+    import.meta.env.VITE_APP_STORE_SECURE_KEY ?? '',
+  ).trim();
+
+  if (
+    !import.meta.env.DEV &&
+    PLACEHOLDER_STORE_SECURE_KEYS.has(encryptionSecret)
+  ) {
+    throw new Error(
+      'VITE_APP_STORE_SECURE_KEY must be set to a non-placeholder value for production builds',
+    );
+  }
+
   const ls = new SecureLSConstructor({
     encodingType: 'aes',
-    encryptionSecret: import.meta.env.VITE_APP_STORE_SECURE_KEY,
+    encryptionSecret,
     isCompression: true,
     metaKey: `${namespace}-secure-meta`,
   });

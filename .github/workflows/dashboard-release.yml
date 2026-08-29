@@ -1,7 +1,9 @@
 name: Yunce Dashboard Release
 
-# 触发：推送 dashboard-v* tag（如 dashboard-v1.0.0）
-# 或手动 workflow_dispatch
+# 触发约定：
+# - 日常 push / dashboard-ci-*：不跑本流程
+# - 打 dashboard-v*：单条流水线 = quality + 推镜像 + 部署（不再另跑 CI）
+# - 也可手动 workflow_dispatch
 # 仓库根目录为 yunce-back，Docker context = yunce-admin/
 on:
   push:

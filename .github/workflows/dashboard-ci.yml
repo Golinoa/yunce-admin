@@ -1,20 +1,14 @@
 name: Yunce Dashboard CI
 
-# 仓库根目录为 yunce-back，前端工程在 yunce-admin/
+# 触发约定（仓库根 = yunce-back）：
+# - 日常 push master/main：不跑
+# - 打 dashboard-ci-*：只跑质量门禁（不部署）
+# - 发版用 dashboard-v*：走 dashboard-release.yml（单条 CI/CD，不重复跑本 workflow）
 on:
-  pull_request:
-    paths:
-      - 'yunce-admin/**'
-      - '.github/workflows/dashboard-ci.yml'
-      - '.github/workflows/dashboard-release.yml'
   push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'yunce-admin/**'
-      - '.github/workflows/dashboard-ci.yml'
-      - '.github/workflows/dashboard-release.yml'
+    tags:
+      - 'dashboard-ci-*'
+  workflow_dispatch:
 
 permissions:
   contents: read

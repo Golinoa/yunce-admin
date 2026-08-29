@@ -128,9 +128,10 @@ async function fetchAll() {
     featureModules.value = moduleResult.list ?? [];
     rebuildMatrixDraft(records.value, featureModules.value);
   } catch {
-    records.value = mergeOrganizationVersionCatalog([]);
+    records.value = [];
     featureModules.value = [];
-    message.warning('套餐目录加载失败，已使用本地兜底');
+    matrixDraft.value = {};
+    message.error('套餐目录加载失败，请检查网络后重试（未使用本地兜底，避免误改）');
   } finally {
     loading.value = false;
   }

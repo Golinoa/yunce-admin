@@ -156,9 +156,18 @@ onMounted(fetchDetail);
               cancel-text="取消"
               @confirm="handleApprove"
             >
-              <a-button type="primary" :loading="approving">通过审核</a-button>
+              <a-button v-access:code="'ADMIN_STORE_ENTRY'" type="primary" :loading="approving">
+                通过审核
+              </a-button>
             </a-popconfirm>
-            <a-button danger :loading="rejecting" @click="openRejectModal">拒绝</a-button>
+            <a-button
+              v-access:code="'ADMIN_STORE_ENTRY'"
+              danger
+              :loading="rejecting"
+              @click="openRejectModal"
+            >
+              拒绝
+            </a-button>
           </a-space>
         </template>
       </template>

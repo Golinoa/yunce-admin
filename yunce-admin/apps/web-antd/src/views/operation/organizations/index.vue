@@ -179,8 +179,8 @@ async function loadVersionDefinitions() {
     const versionResult = await getOrganizationVersionsApi();
     versionDefinitions.value = mergeOrganizationVersionCatalog(versionResult.list);
   } catch {
-    versionDefinitions.value = mergeOrganizationVersionCatalog([]);
-    message.warning('套餐目录加载失败，已使用本地兜底（含 FREE）');
+    versionDefinitions.value = [];
+    message.error('套餐目录加载失败，版本变更已禁用，请稍后重试');
   }
 }
 
@@ -229,6 +229,10 @@ function prefillVersionForm(org: OrganizationItem) {
 }
 
 function openVersionModal(record: OrganizationItem) {
+  if (versionDefinitions.value.length === 0) {
+    message.error('套餐目录未加载，无法调整版本');
+    return;
+  }
   versionTarget.value = record;
   prefillVersionForm(record);
   versionModalOpen.value = true;

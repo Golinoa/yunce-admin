@@ -51,6 +51,11 @@ async function bootstrap(namespace: string) {
   // 安装权限指令
   registerAccessDirective(app);
 
+  app.config.errorHandler = (err, _instance, info) => {
+    // 避免渲染异常静默白屏；业务 Axios 错误仍走 request 拦截器
+    console.error('[vue]', info, err);
+  };
+
   // 初始化 tippy
   const { initTippy } = await import('@vben/common-ui/es/tippy');
   initTippy(app);

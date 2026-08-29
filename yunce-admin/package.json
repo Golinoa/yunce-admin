@@ -103,7 +103,7 @@
     "vue-tsc": "catalog:"
   },
   "engines": {
-    "node": "^22.18.0 || ^24.0.0",
+    "node": "24.20.0",
     "pnpm": ">=11.0.0"
   },
   "packageManager": "pnpm@11.7.0"

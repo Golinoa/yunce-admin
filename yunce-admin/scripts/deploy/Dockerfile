@@ -3,7 +3,7 @@
 # 构建：apps/web-antd → nginx 静态托管 + /api 反代 backend
 # ============================================
 
-FROM node:22-slim AS builder
+FROM node:24.20.0-slim AS builder
 
 ARG DASHBOARD_VERSION=1.0.4
 ENV VITE_DASHBOARD_VERSION=$DASHBOARD_VERSION

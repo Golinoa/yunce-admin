@@ -132,7 +132,7 @@ function secretPayload(
 ): null | string | undefined {
   if (clear) return null;
   const t = value.trim();
-  return t ? t : undefined;
+  return t || undefined;
 }
 
 async function save() {

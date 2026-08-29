@@ -730,10 +730,10 @@ onMounted(async () => {
             <div class="mb-3">
               <div class="mb-1 flex justify-between text-[13px]">
                 <span>会员</span>
-                <span
-                  >{{ quotaDetail.currentMembers }} /
-                  {{ quotaDetail.maxMembers }}</span
-                >
+                <span>
+                  {{ quotaDetail.currentMembers }} /
+                  {{ quotaDetail.maxMembers }}
+                </span>
               </div>
               <a-progress
                 :percent="
@@ -753,10 +753,10 @@ onMounted(async () => {
             <div class="mb-3">
               <div class="mb-1 flex justify-between text-[13px]">
                 <span>员工</span>
-                <span
-                  >{{ quotaDetail.currentEmployees }} /
-                  {{ quotaDetail.maxEmployees }}</span
-                >
+                <span>
+                  {{ quotaDetail.currentEmployees }} /
+                  {{ quotaDetail.maxEmployees }}
+                </span>
               </div>
               <a-progress
                 :percent="
@@ -776,10 +776,10 @@ onMounted(async () => {
             <div>
               <div class="mb-1 flex justify-between text-[13px]">
                 <span>校区</span>
-                <span
-                  >{{ quotaDetail.currentCampuses }} /
-                  {{ quotaDetail.maxCampuses }}</span
-                >
+                <span>
+                  {{ quotaDetail.currentCampuses }} /
+                  {{ quotaDetail.maxCampuses }}
+                </span>
               </div>
               <a-progress
                 :percent="

@@ -99,11 +99,9 @@ function formatDateTime(value?: null | string) {
 }
 
 function statusLabel(status: string) {
-  return status === 'active'
-    ? '启用'
-    : status === 'disabled'
-      ? '停用'
-      : status || '-';
+  if (status === 'active') return '启用';
+  if (status === 'disabled') return '停用';
+  return status || '-';
 }
 
 function statusColor(status: string) {

@@ -1,3 +1,5 @@
+import type { PaginationResult } from './admin';
+
 import { requestClient } from '#/api/request';
 
 /** 机构版本编码（可自由扩展，如 TRIAL / FREE / STANDARD / FLAGSHIP / ENTERPRISE） */
@@ -8,8 +10,6 @@ export type StoreEntryStatus = 'APPROVED' | 'PENDING' | 'REJECTED';
 
 /** 机构状态 */
 export type OrganizationStatus = 'ACTIVE' | 'FROZEN' | 'PENDING' | 'REJECTED';
-
-import type { PaginationResult } from './admin';
 
 /** 版本功能开关（FeatureModule.code → boolean） */
 export type QuotaFeatures = Record<string, boolean>;

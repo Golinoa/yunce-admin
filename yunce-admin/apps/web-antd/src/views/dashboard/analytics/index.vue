@@ -859,9 +859,9 @@ onMounted(async () => {
                       {{ resolveDaysLeftText(item.daysLeft) }}
                     </a-tag>
                   </div>
-                  <span class="task-item__meta"
-                    >到期时间 {{ formatDateTime(item.endAt) }}</span
-                  >
+                  <span class="task-item__meta">
+                    到期时间 {{ formatDateTime(item.endAt) }}
+                  </span>
                 </div>
                 <div class="task-item__desc">
                   <span>机构 {{ item.profile.institution || '-' }}</span>
@@ -999,9 +999,9 @@ onMounted(async () => {
           <a-card :bordered="false" class="chart-card" :loading="loading">
             <template #title>核心趋势</template>
             <template #extra>
-              <span class="chart-card__extra"
-                >新增用户、开通、激活码使用与邀请关系按日趋势</span
-              >
+              <span class="chart-card__extra">
+                新增用户、开通、激活码使用与邀请关系按日趋势
+              </span>
             </template>
             <EchartsUI ref="trendChartRef" height="360px" />
           </a-card>
@@ -1131,9 +1131,9 @@ onMounted(async () => {
           <a-card :bordered="false" class="chart-card" :loading="loading">
             <template #title>运营趋势明细</template>
             <template #extra>
-              <span class="chart-card__extra"
-                >保留明细表，便于运营按日核对</span
-              >
+              <span class="chart-card__extra">
+                保留明细表，便于运营按日核对
+              </span>
             </template>
             <a-table
               :columns="[

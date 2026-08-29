@@ -152,9 +152,9 @@ onMounted(fetchDetail);
         <template v-if="detail && detail.status === 'PENDING'">
           <a-space>
             <span class="text-[13px] text-[var(--ant-color-text-secondary)]">
-              <a-checkbox v-model:checked="approveAsTest"
-                >标记为测试机构</a-checkbox
-              >
+              <a-checkbox v-model:checked="approveAsTest">
+                标记为测试机构
+              </a-checkbox>
             </span>
             <a-popconfirm
               :title="

@@ -244,6 +244,20 @@ export interface OpsNotifySwitches {
   storeEntrySubmitted: boolean;
 }
 
+export interface OpsNotifyTemplateFields {
+  detail?: string;
+  detailWebhook?: string;
+  title?: string;
+  titleTest?: string;
+}
+
+export type OpsNotifyTemplateKey =
+  | 'feedbackNew'
+  | 'orgVersionChanged'
+  | 'storeEntryApproved'
+  | 'storeEntryRejected'
+  | 'storeEntrySubmitted';
+
 export interface OpsNotifyConfig {
   approvedChatId: string;
   callbackUrl: string;
@@ -252,10 +266,16 @@ export interface OpsNotifyConfig {
   defaultTrialPlanId: string;
   enabled: boolean;
   feishuAppConfigured: boolean;
+  feishuAppId: string;
+  hasActionHmacSecret: boolean;
+  hasFeishuAppSecret: boolean;
+  hasFeishuEncryptKey: boolean;
+  hasFeishuVerificationToken: boolean;
   hasWebhook: boolean;
   hasWebhookApproved: boolean;
   reviewChatId: string;
   switches: OpsNotifySwitches;
+  templates: Record<OpsNotifyTemplateKey, OpsNotifyTemplateFields>;
   updatedAt: string;
   webhookApprovedMasked: string;
   webhookMasked: string;
@@ -268,12 +288,18 @@ export function getOpsNotifyConfigApi() {
 }
 
 export function updateOpsNotifyConfigApi(data: {
+  actionHmacSecret?: null | string;
   approvedChatId?: null | string;
   defaultTrialDays?: number;
   defaultTrialPlanId?: null | string;
   enabled?: boolean;
+  feishuAppId?: null | string;
+  feishuAppSecret?: null | string;
+  feishuEncryptKey?: null | string;
+  feishuVerificationToken?: null | string;
   reviewChatId?: null | string;
   switches?: Partial<OpsNotifySwitches>;
+  templates?: null | Partial<Record<OpsNotifyTemplateKey, OpsNotifyTemplateFields>>;
   webhookUrl?: null | string;
   webhookUrlApproved?: null | string;
 }) {

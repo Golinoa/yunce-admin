@@ -105,6 +105,27 @@ const routes: RouteRecordRaw[] = [
   },
   {
     meta: {
+      icon: 'lucide:mail',
+      order: 23.5,
+      title: $t('page.organization.sesEmailSettings'),
+    },
+    name: 'SesEmailSettings',
+    path: '/operation/ses-email-settings',
+    children: [
+      {
+        name: 'SesEmailSettingsPage',
+        path: '/operation/ses-email-settings',
+        component: () =>
+          import('#/views/operation/ses-email-settings/index.vue'),
+        meta: {
+          icon: 'lucide:mail',
+          title: $t('page.organization.sesEmailSettings'),
+        },
+      },
+    ],
+  },
+  {
+    meta: {
       icon: 'lucide:git-branch',
       order: 24,
       title: $t('page.organization.systemVersions'),

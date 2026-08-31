@@ -18,6 +18,7 @@
     "organizations": "机构管理",
     "versions": "套餐与功能",
     "notifySettings": "飞书通知",
+    "sesEmailSettings": "邮件模板",
     "systemVersions": "系统版本"
   }
 }

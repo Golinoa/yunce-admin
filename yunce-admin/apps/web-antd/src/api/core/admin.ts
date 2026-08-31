@@ -350,6 +350,62 @@ export function debugOpsNotifySimulateApi(data: {
   }>('/ops-notify/debug-simulate', data);
 }
 
+export type SesEmailPurpose =
+  | 'bind'
+  | 'expiryReminder'
+  | 'openReminder'
+  | 'register'
+  | 'reset';
+
+export type SesEmailTemplateFields = {
+  codeKey?: string;
+  effectiveTemplateId?: string;
+  fromDb?: boolean;
+  label?: string;
+  subject?: string;
+  templateId?: string;
+};
+
+export interface SesEmailConfig {
+  codeKey: string;
+  configured: boolean;
+  credentialSource: 'db' | 'env' | 'mixed' | 'none';
+  envFallbackNote: string;
+  fromAddress: string;
+  hasSecretKey: boolean;
+  region: string;
+  replyTo: string;
+  secretId: string;
+  templates: Record<SesEmailPurpose, SesEmailTemplateFields>;
+  updatedAt: string;
+}
+
+export function getSesEmailConfigApi() {
+  return requestClient.get<SesEmailConfig>('/ses-email/config');
+}
+
+export function updateSesEmailConfigApi(data: {
+  codeKey?: null | string;
+  fromAddress?: null | string;
+  region?: null | string;
+  replyTo?: null | string;
+  secretId?: null | string;
+  secretKey?: null | string;
+  templates?: null | Partial<
+    Record<SesEmailPurpose, { codeKey?: string; subject?: string; templateId?: string }>
+  >;
+}) {
+  return requestClient.put<SesEmailConfig>('/ses-email/config', data);
+}
+
+export function testSesEmailApi(data: { purpose: SesEmailPurpose; toEmail: string }) {
+  return requestClient.post<{
+    message: string;
+    messageId?: string;
+    success: boolean;
+  }>('/ses-email/test', data);
+}
+
 export type SystemServiceVersion = {
   key: 'backend' | 'dashboard' | 'miniprogram';
   name: string;

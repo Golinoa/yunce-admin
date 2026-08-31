@@ -17,6 +17,8 @@
     "storeEntryDetail": "Store Entry Review Detail",
     "organizations": "Organizations",
     "versions": "Package Limits",
-    "notifySettings": "Feishu Notify"
+    "notifySettings": "Feishu Notify",
+    "sesEmailSettings": "Email Templates",
+    "systemVersions": "System Versions"
   }
 }

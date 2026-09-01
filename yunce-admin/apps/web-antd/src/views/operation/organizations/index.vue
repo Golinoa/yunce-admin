@@ -11,6 +11,7 @@ import type {
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import { message } from 'ant-design-vue';
+import { useUserStore } from '@vben/stores';
 
 import {
   adjustOrganizationExpireApi,
@@ -32,6 +33,12 @@ import {
 } from '#/utils/organization-version';
 
 import OperationTablePage from '../components/OperationTablePage.vue';
+
+const userStore = useUserStore();
+const isFullAdmin = computed(() => {
+  const roles = userStore.userInfo?.roles ?? [];
+  return roles.includes('admin') || roles.includes('super_admin');
+});
 
 const loading = ref(false);
 const records = ref<OrganizationItem[]>([]);
@@ -579,6 +586,7 @@ onMounted(async () => {
                   </a-button>
                 </a-popconfirm>
                 <a-popconfirm
+                  v-if="isFullAdmin"
                   :title="`解散测试机构「${record.name}」？将永久删除该机构全部数据，不可恢复`"
                   ok-text="确认解散"
                   ok-type="danger"

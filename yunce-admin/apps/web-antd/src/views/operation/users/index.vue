@@ -227,7 +227,11 @@ onMounted(fetchUsers);
             <a-button type="link" @click="handleOpenDetail(record)">
               详情
             </a-button>
-            <a-button type="link" @click="openAdjustModal(record)">
+            <a-button
+              v-access:code="'ADMIN_POINTS'"
+              type="link"
+              @click="openAdjustModal(record)"
+            >
               调积分
             </a-button>
           </a-space>

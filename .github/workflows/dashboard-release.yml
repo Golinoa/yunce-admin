@@ -85,6 +85,13 @@ jobs:
             echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: 校验 store 加密密钥 Secret
+        run: |
+          if [ -z "${{ secrets.VITE_APP_STORE_SECURE_KEY }}" ]; then
+            echo "::error::请配置 Secrets.VITE_APP_STORE_SECURE_KEY（生产 store AES 密钥，禁止占位值）"
+            exit 1
+          fi
+
       - name: 构建 + 推送镜像
         uses: docker/build-push-action@v5
         with:
@@ -95,6 +102,7 @@ jobs:
           sbom: false
           build-args: |
             DASHBOARD_VERSION=${{ steps.version.outputs.tag }}
+            VITE_APP_STORE_SECURE_KEY=${{ secrets.VITE_APP_STORE_SECURE_KEY }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:latest

@@ -32,8 +32,8 @@
 
 | 子项目 | 说明 | 端口 |
 |--------|------|------|
-| `haoyong-xiaoke-backend` | Node.js 后端 API 服务 | 3000 |
-| `haoyong-xiaoke-admin` | 管理后台前端 (基于 Vben Admin) | 10086 |
+| `yunce-backend` | Node.js 后端 API 服务 | 3000 |
+| `yunce-admin` / `apps/web-antd` | 松果排课运营管理后台 (Vben + Ant Design Vue) | 10086 |
 
 **核心用户角色**：
 - `PRINCIPAL` — 校长/机构负责人，拥有全部权限
@@ -658,38 +658,40 @@ AppError (base)
 
 ---
 
-## 4. 前端管理后台 (haoyong-xiaoke-admin)
+## 4. 前端管理后台 (yunce-admin / 松果排课运营后台)
+
+> **产品主端：`apps/web-antd`**（Ant Design Vue）。其余 UI 变体为上游 Vben 骨架，不进产品 CI/发版。  
+> 工程化入口：`yunce-admin/apps/web-antd/docs/SOP/README.md`
 
 ### 4.1 技术栈
 
 | 类别 | 技术 |
 |------|------|
 | 框架 | Vue 3 (Composition API) |
-| UI 库 | TDesign Vue Next / Ant Design Vue / Naive UI / Element Plus |
-| 构建工具 | Vite 8 |
-| 状态管理 | Pinia 3 |
-| 路由 | Vue Router 5 |
-| 请求库 | Axios |
+| UI 库 | Ant Design Vue（产品）；其它为上游变体未启用 |
+| 构建工具 | Vite |
+| 状态管理 | Pinia |
+| 路由 | Vue Router |
+| 请求库 | Axios（`@vben/request`） |
 | 包管理 | pnpm 11 (Monorepo) |
 | 构建编排 | Turborepo |
-| 样式 | Tailwind CSS 4 |
-| 类型检查 | TypeScript 6 |
-| 代码规范 | ESLint + OxLint + Prettier + Lefthook |
+| 样式 | Tailwind CSS |
+| 类型检查 | TypeScript + vue-tsc |
+| 代码规范 | ESLint + OxLint + Lefthook |
 | 国际化 | vue-i18n |
-| Mock 服务 | Nitro (backend-mock) |
-| 表格 | VXE Table |
+| 发版 | `dashboard-ci-*` / `dashboard-v*` → Docker + nginx |
 
 ### 4.2 Monorepo 结构
 
 ```
-haoyong-xiaoke-admin/
+yunce-admin/
 ├── apps/                           # 应用
-│   ├── web-tdesign/               # 主应用 (TDesign)
-│   ├── web-antd/                  # Ant Design Vue 版本
-│   ├── web-naive/                 # Naive UI 版本
-│   ├── web-ele/                   # Element Plus 版本
-│   ├── web-antdv-next/            # Ant Design Vue Next 版本
-│   └── backend-mock/              # Mock API 服务 (Nitro)
+│   ├── web-antd/                  # ★ 产品主应用（运营后台）
+│   ├── web-tdesign/               # 上游变体（不进产品 CI）
+│   ├── web-naive/                 # 上游变体
+│   ├── web-ele/                   # 上游变体
+│   ├── web-antdv-next/            # 上游变体
+│   └── backend-mock/              # 上游 Mock（产品已关 Nitro）
 ├── packages/                       # 共享包
 │   ├── @core/                     # 核心包
 │   │   ├── base/                  # 基础设施 (设计 tokens, 共享组件基础)
@@ -726,10 +728,10 @@ haoyong-xiaoke-admin/
 
 ### 4.3 应用架构
 
-以 `apps/web-tdesign` (主应用) 为例：
+以 `apps/web-antd`（产品主应用）为例：
 
 ```
-web-tdesign/
+web-antd/
 ├── src/
 │   ├── main.ts              # 入口：挂载 Vue 应用
 │   ├── bootstrap.ts         # 引导：初始化 Pinia、Router、i18n 等
@@ -881,16 +883,13 @@ npm run dev
 ### 5.2 前端本地开发
 
 ```bash
-cd haoyong-xiaoke-admin
+cd yunce-admin
 
 # 1. 安装依赖 (必须使用 pnpm)
 pnpm install
 
-# 2. 启动 TDesign 应用
-pnpm dev:tdesign
-
-# 3. 启动 Mock 服务 (可选)
-pnpm -F @vben/backend-mock run dev
+# 2. 启动产品主应用 web-antd
+pnpm dev:antd
 ```
 
 ### 5.3 Docker 部署
@@ -968,7 +967,7 @@ app.ts (入口)
 ### 前端包依赖
 
 ```
-apps/web-tdesign
+apps/web-antd
 ├── @vben/stores        (Pinia 状态)
 ├── @vben/types         (类型)
 ├── @vben/utils         (工具)

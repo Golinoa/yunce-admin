@@ -8,6 +8,10 @@ FROM node:24.20.0-slim AS builder
 ARG DASHBOARD_VERSION=1.0.4
 ENV VITE_DASHBOARD_VERSION=$DASHBOARD_VERSION
 
+# 生产 store 加密密钥：必须由 CI Secret / 本地 --build-arg 注入，禁止使用仓库占位值
+ARG VITE_APP_STORE_SECURE_KEY=please-replace-me-with-your-own-key
+ENV VITE_APP_STORE_SECURE_KEY=$VITE_APP_STORE_SECURE_KEY
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_OPTIONS=--max-old-space-size=8192

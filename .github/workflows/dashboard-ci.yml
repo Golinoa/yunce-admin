@@ -3,7 +3,7 @@ name: Yunce Dashboard CI
 # 触发约定（仓库根 = yunce-back）：
 # - 日常 push main：不跑
 # - 打 dashboard-ci-*：只跑质量门禁（不部署）
-# - 发版用 dashboard-v*：走 dashboard-release.yml（单条 CI/CD，不重复跑本 workflow）
+# - 发版用 dashboard-v*：走 dashboard-release.yml
 on:
   push:
     tags:
@@ -19,7 +19,7 @@ env:
 
 jobs:
   quality:
-    name: typecheck + lint + build + docker
+    name: verify:sop + docker
     runs-on: ubuntu-latest
     timeout-minutes: 40
     defaults:
@@ -32,7 +32,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -44,15 +44,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck web-antd
-        run: pnpm --filter @vben/web-antd run typecheck
-
-      - name: Lint (vsh)
-        run: pnpm run lint
-        continue-on-error: false
-
-      - name: Build web-antd
-        run: pnpm run build:antd
+      - name: verify:sop
+        run: pnpm run verify:sop
 
       - name: Docker build test
-        run: docker build -f scripts/deploy/Dockerfile -t yunce-dashboard:ci .
+        run: >
+          docker build -f scripts/deploy/Dockerfile
+          --build-arg VITE_APP_STORE_SECURE_KEY=ci-docker-smoke-key-not-for-prod-32b
+          -t yunce-dashboard:ci .

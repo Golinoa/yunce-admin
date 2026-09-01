@@ -20,7 +20,9 @@
     "build:analyze": "pnpm vite build --mode analyze",
     "dev": "vite --mode development",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit --skipLibCheck"
+    "typecheck": "vue-tsc --noEmit --skipLibCheck",
+    "test": "vitest run --config vitest.config.ts",
+    "test:ci": "vitest run --config vitest.config.ts"
   },
   "imports": {
     "#/*": "./src/*"

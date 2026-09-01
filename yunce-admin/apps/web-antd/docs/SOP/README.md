@@ -46,9 +46,9 @@
 | 文档 | 状态 |
 |------|------|
 | [README.md](./README.md) | 本入口 |
-| [ENGINEERING-EVOLUTION.md](./ENGINEERING-EVOLUTION.md) | 分期演进方案（现行） |
-| PRE-PUSH-CHECKS.md | Phase 1 补齐 |
-| RELEASE-TEST-SOP.md | Phase 1 补齐 |
-| DEVELOPMENT-CONVENTIONS.md | Phase 2 补齐 |
-| AGENTS.md（web-antd 根） | Phase 1 补齐 |
+| [ENGINEERING-EVOLUTION.md](./ENGINEERING-EVOLUTION.md) | 分期演进方案 |
+| [PHASE-0-DONE.md](./PHASE-0-DONE.md) | Phase 0 完成清单 |
+| [PRE-PUSH-CHECKS.md](./PRE-PUSH-CHECKS.md) | 推送前按范围检查 |
+| [RELEASE-TEST-SOP.md](./RELEASE-TEST-SOP.md) | `dashboard-ci-*` / `dashboard-v*` |
+| AGENTS.md（web-antd 根） | 产品硬性约定 |
 | docs/adr/ | Phase 2 起建 |

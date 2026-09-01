@@ -72,6 +72,7 @@
     "verify:sop": "pnpm run check:type:antd && pnpm run lint:antd && pnpm run check:env && pnpm run test:ci:antd && pnpm run build:antd && pnpm run check:compat && pnpm run audit:ci",
     "verify:sop:post": "pnpm run check:health && pnpm run check:headers",
     "verify:sop:fast": "pnpm run check:type:antd && pnpm run lint:antd && pnpm run check:env && pnpm run test:ci:antd && pnpm run check:compat",
+    "verify:scope": "node ./scripts/change-scope.mjs",
     "update:deps": "npx taze -r -w",
     "version": "pnpm exec changeset version && pnpm install --no-frozen-lockfile",
     "catalog": "pnpm dlx codemod pnpm/catalog"

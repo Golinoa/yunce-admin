@@ -7,8 +7,9 @@
 | 改动范围 | 最小证据 |
 |----------|----------|
 | 仅文档 `docs/SOP` / `AGENTS.md` | 无强制；建议读一遍链接是否有效 |
-| 仅 `apps/web-antd/src/**` | `pnpm run check:type:antd` + 相关 `test:ci:antd` |
+| 仅 `apps/web-antd/src/**` | `pnpm run check:type:antd` + `test:ci:antd` |
 | 路由 / 环境 / Dockerfile / CI | `pnpm run check:compat` + `check:env` + `check:type:antd` |
+| 不确定范围 | `pnpm run verify:scope` 打印建议，再执行 |
 | 发版候选 / 跨模块大改 | `pnpm run verify:sop` |
 
 ## 推送前报告模板

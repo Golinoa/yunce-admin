@@ -16,8 +16,9 @@
 
 ## 页面与体量
 
-1. 单文件建议 ≤400 行；超限拆 `components/` / `composables/`。
-2. 运营列表页优先复用统一筛选/分页/抽屉模式（见工程化演进 Phase 2）。
+1. 运营列表页优先使用 `views/operation/components/OperationTablePage`（筛选 / 操作 / 表格 slots）。
+2. 单文件建议 ≤400 行；超限拆 `components/` / `composables/`。
+3. 约定详见工程化演进 Phase 2 / ADR-0003；未用 UI 变体见 ADR-0004。
 
 ## 质量门禁
 

@@ -31,6 +31,8 @@ import {
   versionColor as resolveVersionColor,
 } from '#/utils/organization-version';
 
+import OperationTablePage from '../components/OperationTablePage.vue';
+
 const loading = ref(false);
 const records = ref<OrganizationItem[]>([]);
 const versionDefinitions = ref<OrganizationVersionItem[]>([]);
@@ -390,9 +392,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-5">
-    <a-card title="机构管理" :bordered="false">
-      <a-form layout="inline" class="mb-4">
+  <OperationTablePage title="机构管理" :loading="loading">
+    <template #filters>
+      <a-form layout="inline">
         <a-form-item label="关键词">
           <a-input
             v-model:value="filters.keyword"
@@ -438,6 +440,7 @@ onMounted(async () => {
           </a-space>
         </a-form-item>
       </a-form>
+    </template>
 
       <a-alert
         v-if="overLimitNotice"
@@ -589,7 +592,7 @@ onMounted(async () => {
           </template>
         </template>
       </a-table>
-    </a-card>
+  </OperationTablePage>
 
     <!-- 调整版本弹窗 -->
     <a-modal
@@ -843,5 +846,4 @@ onMounted(async () => {
         </a-form-item>
       </a-form>
     </a-modal>
-  </div>
 </template>

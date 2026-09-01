@@ -11,6 +11,8 @@ import {
   updateFeedbackHandleApi,
 } from '#/api';
 
+import OperationTablePage from '../components/OperationTablePage.vue';
+
 const loading = ref(false);
 const detailLoading = ref(false);
 const handleSubmitting = ref(false);
@@ -164,9 +166,9 @@ onMounted(fetchFeedbacks);
 </script>
 
 <template>
-  <div class="p-5">
-    <a-card title="使用反馈" :bordered="false">
-      <a-form layout="inline" class="mb-4">
+  <OperationTablePage title="使用反馈" :loading="loading">
+    <template #filters>
+      <a-form layout="inline">
         <a-form-item label="关键词">
           <a-input
             v-model:value="filters.keyword"
@@ -200,154 +202,154 @@ onMounted(fetchFeedbacks);
           </a-space>
         </a-form-item>
       </a-form>
+    </template>
 
-      <div
-        class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
-      >
-        小程序端所有已登录用户均可提交反馈，后台统一查看问题描述、图片证据与处理状态
-      </div>
+    <div
+      class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
+    >
+      小程序端所有已登录用户均可提交反馈，后台统一查看问题描述、图片证据与处理状态
+    </div>
 
-      <a-table
-        :columns="[
-          { title: '用户', dataIndex: 'userName' },
-          { title: '手机号', dataIndex: ['profile', 'phone'] },
-          { title: '机构', dataIndex: 'institutionName' },
-          { title: '反馈类型', dataIndex: 'type' },
-          { title: '图片数', dataIndex: 'imageCount' },
-          { title: '处理状态', dataIndex: 'handleStatus' },
-          { title: '提交时间', dataIndex: 'createdAt' },
-          { title: '操作', key: 'action' },
-        ]"
-        :data-source="tableData"
-        :loading="loading"
-        :pagination="{
-          current: pagination.page,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          onChange: (page: number, pageSize: number) => {
-            pagination.page = page;
-            pagination.pageSize = pageSize;
-            fetchFeedbacks();
-          },
-        }"
-        row-key="id"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'type'">
-            {{ formatFeedbackType(record.type) }}
+    <a-table
+      :columns="[
+        { title: '用户', dataIndex: 'userName' },
+        { title: '手机号', dataIndex: ['profile', 'phone'] },
+        { title: '机构', dataIndex: 'institutionName' },
+        { title: '反馈类型', dataIndex: 'type' },
+        { title: '图片数', dataIndex: 'imageCount' },
+        { title: '处理状态', dataIndex: 'handleStatus' },
+        { title: '提交时间', dataIndex: 'createdAt' },
+        { title: '操作', key: 'action' },
+      ]"
+      :data-source="tableData"
+      :loading="loading"
+      :pagination="{
+        current: pagination.page,
+        pageSize: pagination.pageSize,
+        total: pagination.total,
+        onChange: (page: number, pageSize: number) => {
+          pagination.page = page;
+          pagination.pageSize = pageSize;
+          fetchFeedbacks();
+        },
+      }"
+      row-key="id"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'type'">
+          {{ formatFeedbackType(record.type) }}
+        </template>
+        <template v-else-if="column.dataIndex === 'handleStatus'">
+          <a-tag
+            :color="
+              record.handleStatus === 'RESOLVED'
+                ? 'green'
+                : record.handleStatus === 'PROCESSING'
+                  ? 'blue'
+                  : record.handleStatus === 'CLOSED'
+                    ? 'default'
+                    : 'orange'
+            "
+          >
+            {{ formatHandleStatus(record.handleStatus) }}
+          </a-tag>
+        </template>
+        <template v-else-if="column.dataIndex === 'createdAt'">
+          {{ formatDateTime(record.createdAt) }}
+        </template>
+        <template v-else-if="column.key === 'action'">
+          <a-button type="link" @click="openDetail(record)">详情</a-button>
+        </template>
+      </template>
+    </a-table>
+  </OperationTablePage>
+
+  <a-drawer v-model:open="detailOpen" width="760" title="反馈详情">
+    <a-spin :spinning="detailLoading">
+      <template v-if="detail">
+        <a-descriptions :column="2" bordered size="small">
+          <a-descriptions-item label="用户">
+            {{ detail.profile.name || detail.profile.nickname || '-' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="手机号">
+            {{ detail.profile.phone || '-' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="机构">
+            {{ detail.profile.teacher?.institution || '-' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="反馈类型">
+            {{ formatFeedbackType(detail.type) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="处理状态">
+            {{ formatHandleStatus(detail.handleStatus) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="提交时间">
+            {{ formatDateTime(detail.createdAt) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="联系方式" :span="2">
+            {{ detail.contact || '-' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="问题描述" :span="2">
+            {{ detail.content }}
+          </a-descriptions-item>
+        </a-descriptions>
+
+        <a-card class="mt-4" size="small" title="反馈图片">
+          <template v-if="normalizeImages(detail.images).length > 0">
+            <a-image-preview-group>
+              <div class="grid grid-cols-3 gap-4">
+                <a-image
+                  v-for="image in normalizeImages(detail.images)"
+                  :key="image"
+                  :src="image"
+                  class="h-[140px] rounded-md object-cover"
+                />
+              </div>
+            </a-image-preview-group>
           </template>
-          <template v-else-if="column.dataIndex === 'handleStatus'">
-            <a-tag
-              :color="
-                record.handleStatus === 'RESOLVED'
-                  ? 'green'
-                  : record.handleStatus === 'PROCESSING'
-                    ? 'blue'
-                    : record.handleStatus === 'CLOSED'
-                      ? 'default'
-                      : 'orange'
-              "
+          <a-empty v-else description="未上传图片" />
+        </a-card>
+
+        <a-card class="mt-4" size="small" title="客诉处理">
+          <a-form layout="vertical">
+            <a-form-item label="处理状态">
+              <a-select
+                v-model:value="handleForm.handleStatus"
+                :options="handleStatusOptions"
+              />
+            </a-form-item>
+            <a-form-item label="处理备注">
+              <a-textarea
+                v-model:value="handleForm.handleRemark"
+                :maxlength="500"
+                :rows="4"
+                placeholder="记录处理动作、沟通结果或后续跟进计划"
+                show-count
+              />
+            </a-form-item>
+            <a-form-item label="最近处理人">
+              <a-input
+                :value="
+                  detail.handledByAdmin?.nickname ||
+                  detail.handledByAdmin?.username ||
+                  '-'
+                "
+                disabled
+              />
+            </a-form-item>
+            <a-form-item label="最近处理时间">
+              <a-input :value="formatDateTime(detail.handledAt)" disabled />
+            </a-form-item>
+            <a-button
+              type="primary"
+              :loading="handleSubmitting"
+              @click="submitHandle"
             >
-              {{ formatHandleStatus(record.handleStatus) }}
-            </a-tag>
-          </template>
-          <template v-else-if="column.dataIndex === 'createdAt'">
-            {{ formatDateTime(record.createdAt) }}
-          </template>
-          <template v-else-if="column.key === 'action'">
-            <a-button type="link" @click="openDetail(record)">详情</a-button>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
-
-    <a-drawer v-model:open="detailOpen" width="760" title="反馈详情">
-      <a-spin :spinning="detailLoading">
-        <template v-if="detail">
-          <a-descriptions :column="2" bordered size="small">
-            <a-descriptions-item label="用户">
-              {{ detail.profile.name || detail.profile.nickname || '-' }}
-            </a-descriptions-item>
-            <a-descriptions-item label="手机号">
-              {{ detail.profile.phone || '-' }}
-            </a-descriptions-item>
-            <a-descriptions-item label="机构">
-              {{ detail.profile.teacher?.institution || '-' }}
-            </a-descriptions-item>
-            <a-descriptions-item label="反馈类型">
-              {{ formatFeedbackType(detail.type) }}
-            </a-descriptions-item>
-            <a-descriptions-item label="处理状态">
-              {{ formatHandleStatus(detail.handleStatus) }}
-            </a-descriptions-item>
-            <a-descriptions-item label="提交时间">
-              {{ formatDateTime(detail.createdAt) }}
-            </a-descriptions-item>
-            <a-descriptions-item label="联系方式" :span="2">
-              {{ detail.contact || '-' }}
-            </a-descriptions-item>
-            <a-descriptions-item label="问题描述" :span="2">
-              {{ detail.content }}
-            </a-descriptions-item>
-          </a-descriptions>
-
-          <a-card class="mt-4" size="small" title="反馈图片">
-            <template v-if="normalizeImages(detail.images).length > 0">
-              <a-image-preview-group>
-                <div class="grid grid-cols-3 gap-4">
-                  <a-image
-                    v-for="image in normalizeImages(detail.images)"
-                    :key="image"
-                    :src="image"
-                    class="h-[140px] rounded-md object-cover"
-                  />
-                </div>
-              </a-image-preview-group>
-            </template>
-            <a-empty v-else description="未上传图片" />
-          </a-card>
-
-          <a-card class="mt-4" size="small" title="客诉处理">
-            <a-form layout="vertical">
-              <a-form-item label="处理状态">
-                <a-select
-                  v-model:value="handleForm.handleStatus"
-                  :options="handleStatusOptions"
-                />
-              </a-form-item>
-              <a-form-item label="处理备注">
-                <a-textarea
-                  v-model:value="handleForm.handleRemark"
-                  :maxlength="500"
-                  :rows="4"
-                  placeholder="记录处理动作、沟通结果或后续跟进计划"
-                  show-count
-                />
-              </a-form-item>
-              <a-form-item label="最近处理人">
-                <a-input
-                  :value="
-                    detail.handledByAdmin?.nickname ||
-                    detail.handledByAdmin?.username ||
-                    '-'
-                  "
-                  disabled
-                />
-              </a-form-item>
-              <a-form-item label="最近处理时间">
-                <a-input :value="formatDateTime(detail.handledAt)" disabled />
-              </a-form-item>
-              <a-button
-                type="primary"
-                :loading="handleSubmitting"
-                @click="submitHandle"
-              >
-                保存处理结果
-              </a-button>
-            </a-form>
-          </a-card>
-        </template>
-      </a-spin>
-    </a-drawer>
-  </div>
+              保存处理结果
+            </a-button>
+          </a-form>
+        </a-card>
+      </template>
+    </a-spin>
+  </a-drawer>
 </template>

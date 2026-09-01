@@ -5,6 +5,8 @@ import { message } from 'ant-design-vue';
 
 import { adjustPointsApi, getUserDetailApi, getUsersApi } from '#/api';
 
+import OperationTablePage from '../components/OperationTablePage.vue';
+
 type MembershipStatus = 'ACTIVE' | 'EXPIRED';
 
 interface UserRecord {
@@ -160,9 +162,9 @@ onMounted(fetchUsers);
 </script>
 
 <template>
-  <div class="p-5">
-    <a-card title="用户管理" :bordered="false">
-      <a-form layout="inline" class="mb-4">
+  <OperationTablePage title="用户管理" :loading="loading">
+    <template #filters>
+      <a-form layout="inline">
         <a-form-item label="关键词">
           <a-input
             v-model:value="filters.keyword"
@@ -187,163 +189,165 @@ onMounted(fetchUsers);
           </a-space>
         </a-form-item>
       </a-form>
-      <div
-        class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
-      >
-        用户默认指校长客户，教师、家长、学生只在详情中做机构基础数据查看
-      </div>
-      <a-table
-        :columns="tableColumns"
-        :data-source="tableData"
-        :loading="loading"
-        :pagination="{
-          current: pagination.page,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          onChange: (page: number, pageSize: number) => {
-            pagination.page = page;
-            pagination.pageSize = pageSize;
-            fetchUsers();
-          },
-        }"
-        row-key="id"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'membershipStatus'">
-            {{ formatMembershipStatus(record.membershipStatus) }}
-          </template>
-          <template v-else-if="column.dataIndex === 'membershipExpireAt'">
-            {{ formatDateTime(record.membershipExpireAt) }}
-          </template>
-          <template v-else-if="column.dataIndex === 'createdAt'">
-            {{ formatDateTime(record.createdAt) }}
-          </template>
-          <template v-if="column.key === 'action'">
-            <a-space>
-              <a-button type="link" @click="handleOpenDetail(record)">
-                详情
-              </a-button>
-              <a-button type="link" @click="openAdjustModal(record)">
-                调积分
-              </a-button>
-            </a-space>
-          </template>
+    </template>
+
+    <div
+      class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
+    >
+      用户默认指校长客户，教师、家长、学生只在详情中做机构基础数据查看
+    </div>
+    <a-table
+      :columns="tableColumns"
+      :data-source="tableData"
+      :loading="loading"
+      :pagination="{
+        current: pagination.page,
+        pageSize: pagination.pageSize,
+        total: pagination.total,
+        onChange: (page: number, pageSize: number) => {
+          pagination.page = page;
+          pagination.pageSize = pageSize;
+          fetchUsers();
+        },
+      }"
+      row-key="id"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'membershipStatus'">
+          {{ formatMembershipStatus(record.membershipStatus) }}
         </template>
-      </a-table>
-    </a-card>
-    <a-drawer v-model:open="detailOpen" width="720" title="用户详情">
-      <a-spin :spinning="detailLoading">
-        <a-descriptions v-if="detail" :column="2" bordered size="small">
-          <a-descriptions-item label="用户名称">
-            {{ detail.name || detail.nickname || '-' }}
-          </a-descriptions-item>
-          <a-descriptions-item label="手机号">
-            {{ detail.phone || '-' }}
-          </a-descriptions-item>
-          <a-descriptions-item label="会员状态">
+        <template v-else-if="column.dataIndex === 'membershipExpireAt'">
+          {{ formatDateTime(record.membershipExpireAt) }}
+        </template>
+        <template v-else-if="column.dataIndex === 'createdAt'">
+          {{ formatDateTime(record.createdAt) }}
+        </template>
+        <template v-if="column.key === 'action'">
+          <a-space>
+            <a-button type="link" @click="handleOpenDetail(record)">
+              详情
+            </a-button>
+            <a-button type="link" @click="openAdjustModal(record)">
+              调积分
+            </a-button>
+          </a-space>
+        </template>
+      </template>
+    </a-table>
+  </OperationTablePage>
+
+  <a-drawer v-model:open="detailOpen" width="720" title="用户详情">
+    <a-spin :spinning="detailLoading">
+      <a-descriptions v-if="detail" :column="2" bordered size="small">
+        <a-descriptions-item label="用户名称">
+          {{ detail.name || detail.nickname || '-' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="手机号">
+          {{ detail.phone || '-' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="会员状态">
+          {{
+            formatMembershipStatus(
+              detail.membershipGrants?.[0]?.status || 'EXPIRED',
+            )
+          }}
+        </a-descriptions-item>
+        <a-descriptions-item label="积分余额">
+          {{ detail.pointAccount?.balance ?? 0 }}
+        </a-descriptions-item>
+        <a-descriptions-item label="邀请人">
+          {{ detail.receivedInvite?.inviter?.nickname || '-' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="创建时间">
+          {{ formatDateTime(detail.createdAt) }}
+        </a-descriptions-item>
+      </a-descriptions>
+      <a-card class="mt-4" size="small" title="机构基础数据">
+        <a-descriptions :column="2" bordered size="small">
+          <a-descriptions-item label="机构名称">
             {{
-              formatMembershipStatus(
-                detail.membershipGrants?.[0]?.status || 'EXPIRED',
-              )
+              detail?.institutionSummary?.institutionName ||
+              detail?.teacher?.institution ||
+              '-'
             }}
           </a-descriptions-item>
-          <a-descriptions-item label="积分余额">
-            {{ detail.pointAccount?.balance ?? 0 }}
+          <a-descriptions-item label="教师数">
+            {{ detail?.institutionSummary?.teacherCount ?? 0 }}
           </a-descriptions-item>
-          <a-descriptions-item label="邀请人">
-            {{ detail.receivedInvite?.inviter?.nickname || '-' }}
+          <a-descriptions-item label="家长数">
+            {{ detail?.institutionSummary?.parentCount ?? 0 }}
           </a-descriptions-item>
-          <a-descriptions-item label="创建时间">
-            {{ formatDateTime(detail.createdAt) }}
+          <a-descriptions-item label="学生数">
+            {{ detail?.institutionSummary?.studentCount ?? 0 }}
           </a-descriptions-item>
         </a-descriptions>
-        <a-card class="mt-4" size="small" title="机构基础数据">
-          <a-descriptions :column="2" bordered size="small">
-            <a-descriptions-item label="机构名称">
-              {{
-                detail?.institutionSummary?.institutionName ||
-                detail?.teacher?.institution ||
-                '-'
-              }}
-            </a-descriptions-item>
-            <a-descriptions-item label="教师数">
-              {{ detail?.institutionSummary?.teacherCount ?? 0 }}
-            </a-descriptions-item>
-            <a-descriptions-item label="家长数">
-              {{ detail?.institutionSummary?.parentCount ?? 0 }}
-            </a-descriptions-item>
-            <a-descriptions-item label="学生数">
-              {{ detail?.institutionSummary?.studentCount ?? 0 }}
-            </a-descriptions-item>
-          </a-descriptions>
-        </a-card>
-        <a-card class="mt-4" size="small" title="会员记录">
-          <a-table
-            :columns="[
-              { title: '套餐', dataIndex: ['plan', 'name'] },
-              { title: '来源', dataIndex: 'source' },
-              { title: '状态', dataIndex: 'status' },
-              { title: '开始时间', dataIndex: 'startAt' },
-              { title: '到期时间', dataIndex: 'endAt' },
-            ]"
-            :data-source="detail?.membershipGrants || []"
-            :pagination="false"
-            row-key="id"
-            size="small"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.dataIndex === 'status'">
-                {{ formatMembershipStatus(record.status) }}
-              </template>
-              <template
-                v-else-if="
-                  column.dataIndex === 'startAt' || column.dataIndex === 'endAt'
-                "
-              >
-                {{ formatDateTime(record[column.dataIndex]) }}
-              </template>
+      </a-card>
+      <a-card class="mt-4" size="small" title="会员记录">
+        <a-table
+          :columns="[
+            { title: '套餐', dataIndex: ['plan', 'name'] },
+            { title: '来源', dataIndex: 'source' },
+            { title: '状态', dataIndex: 'status' },
+            { title: '开始时间', dataIndex: 'startAt' },
+            { title: '到期时间', dataIndex: 'endAt' },
+          ]"
+          :data-source="detail?.membershipGrants || []"
+          :pagination="false"
+          row-key="id"
+          size="small"
+        >
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.dataIndex === 'status'">
+              {{ formatMembershipStatus(record.status) }}
             </template>
-          </a-table>
-        </a-card>
-        <a-card class="mt-4" size="small" title="最近积分流水">
-          <a-table
-            :columns="[
-              { title: '类型', dataIndex: 'type' },
-              { title: '来源', dataIndex: 'source' },
-              { title: '积分', dataIndex: 'amount' },
-              { title: '余额', dataIndex: 'balanceAfter' },
-              { title: '时间', dataIndex: 'createdAt' },
-            ]"
-            :data-source="detail?.pointRecords || []"
-            :pagination="false"
-            row-key="id"
-            size="small"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.dataIndex === 'createdAt'">
-                {{ formatDateTime(record.createdAt) }}
-              </template>
+            <template
+              v-else-if="
+                column.dataIndex === 'startAt' || column.dataIndex === 'endAt'
+              "
+            >
+              {{ formatDateTime(record[column.dataIndex]) }}
             </template>
-          </a-table>
-        </a-card>
-      </a-spin>
-    </a-drawer>
-    <a-modal
-      v-model:open="adjustOpen"
-      title="调整积分"
-      @ok="handleAdjustPoints"
-    >
-      <a-form layout="vertical">
-        <a-form-item label="用户 ID">
-          <a-input v-model:value="adjustForm.profileId" />
-        </a-form-item>
-        <a-form-item label="变更积分">
-          <a-input-number v-model:value="adjustForm.amount" class="w-full" />
-        </a-form-item>
-        <a-form-item label="备注">
-          <a-input v-model:value="adjustForm.remark" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
-  </div>
+          </template>
+        </a-table>
+      </a-card>
+      <a-card class="mt-4" size="small" title="最近积分流水">
+        <a-table
+          :columns="[
+            { title: '类型', dataIndex: 'type' },
+            { title: '来源', dataIndex: 'source' },
+            { title: '积分', dataIndex: 'amount' },
+            { title: '余额', dataIndex: 'balanceAfter' },
+            { title: '时间', dataIndex: 'createdAt' },
+          ]"
+          :data-source="detail?.pointRecords || []"
+          :pagination="false"
+          row-key="id"
+          size="small"
+        >
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.dataIndex === 'createdAt'">
+              {{ formatDateTime(record.createdAt) }}
+            </template>
+          </template>
+        </a-table>
+      </a-card>
+    </a-spin>
+  </a-drawer>
+  <a-modal
+    v-model:open="adjustOpen"
+    title="调整积分"
+    @ok="handleAdjustPoints"
+  >
+    <a-form layout="vertical">
+      <a-form-item label="用户 ID">
+        <a-input v-model:value="adjustForm.profileId" />
+      </a-form-item>
+      <a-form-item label="变更积分">
+        <a-input-number v-model:value="adjustForm.amount" class="w-full" />
+      </a-form-item>
+      <a-form-item label="备注">
+        <a-input v-model:value="adjustForm.remark" />
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>

@@ -6,6 +6,8 @@ import { useRouter } from 'vue-router';
 
 import { getStoreEntryApplicationsApi } from '#/api';
 
+import OperationTablePage from '../components/OperationTablePage.vue';
+
 const router = useRouter();
 
 const loading = ref(false);
@@ -108,9 +110,9 @@ onMounted(fetchApplications);
 </script>
 
 <template>
-  <div class="p-5">
-    <a-card title="门店入驻审核" :bordered="false">
-      <a-form layout="inline" class="mb-4">
+  <OperationTablePage title="门店入驻审核" :loading="loading">
+    <template #filters>
+      <a-form layout="inline">
         <a-form-item label="关键词">
           <a-input
             v-model:value="filters.keyword"
@@ -135,53 +137,53 @@ onMounted(fetchApplications);
           </a-space>
         </a-form-item>
       </a-form>
+    </template>
 
-      <div
-        class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
-      >
-        门店负责人在小程序端提交入驻申请后在此审核；通过后机构自动启用（默认免费版）并创建默认校区，拒绝时需填写原因
-      </div>
+    <div
+      class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
+    >
+      门店负责人在小程序端提交入驻申请后在此审核；通过后机构自动启用（默认免费版）并创建默认校区，拒绝时需填写原因
+    </div>
 
-      <a-table
-        :columns="[
-          { title: '门店名称', dataIndex: 'name' },
-          { title: '门店类型', dataIndex: 'type' },
-          { title: '申请人', dataIndex: 'applicantName' },
-          { title: '所在地区', dataIndex: 'regionText' },
-          { title: '联系人', dataIndex: 'contactName' },
-          { title: '联系电话', dataIndex: 'contactPhone' },
-          { title: '审核状态', dataIndex: 'status' },
-          { title: '申请时间', dataIndex: 'createdAt' },
-          { title: '操作', key: 'action' },
-        ]"
-        :data-source="tableData"
-        :loading="loading"
-        :pagination="{
-          current: pagination.page,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          onChange: (page: number, pageSize: number) => {
-            pagination.page = page;
-            pagination.pageSize = pageSize;
-            fetchApplications();
-          },
-        }"
-        row-key="id"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'status'">
-            <a-tag :color="statusColor(record.status)">
-              {{ formatStatus(record.status) }}
-            </a-tag>
-          </template>
-          <template v-else-if="column.dataIndex === 'createdAt'">
-            {{ formatDateTime(record.createdAt) }}
-          </template>
-          <template v-else-if="column.key === 'action'">
-            <a-button type="link" @click="openDetail(record)">详情</a-button>
-          </template>
+    <a-table
+      :columns="[
+        { title: '门店名称', dataIndex: 'name' },
+        { title: '门店类型', dataIndex: 'type' },
+        { title: '申请人', dataIndex: 'applicantName' },
+        { title: '所在地区', dataIndex: 'regionText' },
+        { title: '联系人', dataIndex: 'contactName' },
+        { title: '联系电话', dataIndex: 'contactPhone' },
+        { title: '审核状态', dataIndex: 'status' },
+        { title: '申请时间', dataIndex: 'createdAt' },
+        { title: '操作', key: 'action' },
+      ]"
+      :data-source="tableData"
+      :loading="loading"
+      :pagination="{
+        current: pagination.page,
+        pageSize: pagination.pageSize,
+        total: pagination.total,
+        onChange: (page: number, pageSize: number) => {
+          pagination.page = page;
+          pagination.pageSize = pageSize;
+          fetchApplications();
+        },
+      }"
+      row-key="id"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'status'">
+          <a-tag :color="statusColor(record.status)">
+            {{ formatStatus(record.status) }}
+          </a-tag>
         </template>
-      </a-table>
-    </a-card>
-  </div>
+        <template v-else-if="column.dataIndex === 'createdAt'">
+          {{ formatDateTime(record.createdAt) }}
+        </template>
+        <template v-else-if="column.key === 'action'">
+          <a-button type="link" @click="openDetail(record)">详情</a-button>
+        </template>
+      </template>
+    </a-table>
+  </OperationTablePage>
 </template>

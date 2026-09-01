@@ -11,6 +11,8 @@ import {
   voidActivationCodeApi,
 } from '#/api';
 
+import OperationTablePage from '../components/OperationTablePage.vue';
+
 type ActivationCodeStatus = 'EXPIRED' | 'UNUSED' | 'USED' | 'VOIDED';
 
 interface ActivationCodeRecord {
@@ -176,24 +178,9 @@ onMounted(fetchCodes);
 </script>
 
 <template>
-  <div class="p-5">
-    <a-card title="激活码管理" :bordered="false">
-      <template #extra>
-        <a-space>
-          <a-popconfirm
-            title="确认删除已选择的激活码吗？仅支持删除未使用或已作废记录。"
-            ok-text="确认删除"
-            cancel-text="取消"
-            @confirm="handleBatchDelete"
-          >
-            <a-button danger :disabled="selectedRowKeys.length === 0">
-              批量删除
-            </a-button>
-          </a-popconfirm>
-          <a-button type="primary" @click="openCreateModal">批量生成</a-button>
-        </a-space>
-      </template>
-      <a-form layout="inline" class="mb-4">
+  <OperationTablePage title="激活码管理" :loading="loading">
+    <template #filters>
+      <a-form layout="inline">
         <a-form-item label="激活码">
           <a-input
             v-model:value="filters.code"
@@ -234,123 +221,141 @@ onMounted(fetchCodes);
           </a-space>
         </a-form-item>
       </a-form>
-      <div
-        class="mb-4 flex items-center justify-between rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3"
-      >
-        <span class="text-[13px] text-[var(--ant-color-text-secondary)]">
-          已选择
-          {{ selectedRowKeys.length }}
-          个可删除激活码，仅支持删除未使用或已作废记录
-        </span>
-        <a-button
-          type="link"
-          :disabled="selectedRowKeys.length === 0"
-          @click="selectedRowKeys = []"
+    </template>
+
+    <template #actions>
+      <a-space>
+        <a-popconfirm
+          title="确认删除已选择的激活码吗？仅支持删除未使用或已作废记录。"
+          ok-text="确认删除"
+          cancel-text="取消"
+          @confirm="handleBatchDelete"
         >
-          清空选择
-        </a-button>
-      </div>
-      <a-table
-        :columns="[
-          { title: '激活码', dataIndex: 'code' },
-          { title: '套餐', dataIndex: ['plan', 'name'] },
-          { title: '状态', dataIndex: 'status' },
-          { title: '批次', dataIndex: 'batchNo' },
-          { title: '渠道', dataIndex: 'channel' },
-          { title: '使用用户', dataIndex: ['usedBy', 'nickname'] },
-          { title: '有效期', dataIndex: 'expiresAt' },
-          { title: '使用时间', dataIndex: 'usedAt' },
-          { title: '创建时间', dataIndex: 'createdAt' },
-          { title: '操作', key: 'action' },
-        ]"
-        :data-source="records"
-        :loading="loading"
-        :row-selection="{
-          selectedRowKeys,
-          onChange: (keys: string[]) => {
-            selectedRowKeys = keys;
-          },
-          getCheckboxProps: (record: ActivationCodeRecord) => ({
-            disabled: !canDeleteCode(record),
-          }),
-        }"
-        :pagination="{
-          current: pagination.page,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          onChange: (page: number, pageSize: number) => {
-            pagination.page = page;
-            pagination.pageSize = pageSize;
-            fetchCodes();
-          },
-        }"
-        row-key="id"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'status'">
-            {{ formatStatus(record.status) }}
-          </template>
-          <template
-            v-else-if="
-              column.dataIndex === 'expiresAt' ||
-              column.dataIndex === 'usedAt' ||
-              column.dataIndex === 'createdAt'
-            "
-          >
-            {{ formatDateTime(record[column.dataIndex]) }}
-          </template>
-          <template v-if="column.key === 'action'">
-            <a-popconfirm
-              title="确认作废这个激活码吗？"
-              ok-text="确认"
-              cancel-text="取消"
-              @confirm="handleVoid(record.id)"
-            >
-              <a-button
-                :disabled="
-                  record.status === 'USED' || record.status === 'VOIDED'
-                "
-                type="link"
-              >
-                作废
-              </a-button>
-            </a-popconfirm>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
-    <a-modal
-      v-model:open="createOpen"
-      title="批量生成激活码"
-      @ok="handleCreate"
+          <a-button danger :disabled="selectedRowKeys.length === 0">
+            批量删除
+          </a-button>
+        </a-popconfirm>
+        <a-button type="primary" @click="openCreateModal">批量生成</a-button>
+      </a-space>
+    </template>
+
+    <div
+      class="mb-4 flex items-center justify-between rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3"
     >
-      <a-form layout="vertical">
-        <a-form-item label="会员套餐">
-          <a-select v-model:value="createForm.planId" placeholder="请选择套餐">
-            <a-select-option
-              v-for="item in plans"
-              :key="item.id"
-              :value="item.id"
+      <span class="text-[13px] text-[var(--ant-color-text-secondary)]">
+        已选择
+        {{ selectedRowKeys.length }}
+        个可删除激活码，仅支持删除未使用或已作废记录
+      </span>
+      <a-button
+        type="link"
+        :disabled="selectedRowKeys.length === 0"
+        @click="selectedRowKeys = []"
+      >
+        清空选择
+      </a-button>
+    </div>
+    <a-table
+      :columns="[
+        { title: '激活码', dataIndex: 'code' },
+        { title: '套餐', dataIndex: ['plan', 'name'] },
+        { title: '状态', dataIndex: 'status' },
+        { title: '批次', dataIndex: 'batchNo' },
+        { title: '渠道', dataIndex: 'channel' },
+        { title: '使用用户', dataIndex: ['usedBy', 'nickname'] },
+        { title: '有效期', dataIndex: 'expiresAt' },
+        { title: '使用时间', dataIndex: 'usedAt' },
+        { title: '创建时间', dataIndex: 'createdAt' },
+        { title: '操作', key: 'action' },
+      ]"
+      :data-source="records"
+      :loading="loading"
+      :row-selection="{
+        selectedRowKeys,
+        onChange: (keys: string[]) => {
+          selectedRowKeys = keys;
+        },
+        getCheckboxProps: (record: ActivationCodeRecord) => ({
+          disabled: !canDeleteCode(record),
+        }),
+      }"
+      :pagination="{
+        current: pagination.page,
+        pageSize: pagination.pageSize,
+        total: pagination.total,
+        onChange: (page: number, pageSize: number) => {
+          pagination.page = page;
+          pagination.pageSize = pageSize;
+          fetchCodes();
+        },
+      }"
+      row-key="id"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'status'">
+          {{ formatStatus(record.status) }}
+        </template>
+        <template
+          v-else-if="
+            column.dataIndex === 'expiresAt' ||
+            column.dataIndex === 'usedAt' ||
+            column.dataIndex === 'createdAt'
+          "
+        >
+          {{ formatDateTime(record[column.dataIndex]) }}
+        </template>
+        <template v-if="column.key === 'action'">
+          <a-popconfirm
+            title="确认作废这个激活码吗？"
+            ok-text="确认"
+            cancel-text="取消"
+            @confirm="handleVoid(record.id)"
+          >
+            <a-button
+              :disabled="
+                record.status === 'USED' || record.status === 'VOIDED'
+              "
+              type="link"
             >
-              {{ item.name }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="数量">
-          <a-input-number
-            v-model:value="createForm.quantity"
-            :min="1"
-            :max="200"
-            class="w-full"
-          />
-        </a-form-item>
-        <a-form-item label="批次号">
-          <a-input v-model:value="createForm.batchNo" />
-        </a-form-item>
-        <a-form-item label="渠道">
-          <a-input v-model:value="createForm.channel" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
-  </div>
+              作废
+            </a-button>
+          </a-popconfirm>
+        </template>
+      </template>
+    </a-table>
+  </OperationTablePage>
+
+  <a-modal
+    v-model:open="createOpen"
+    title="批量生成激活码"
+    @ok="handleCreate"
+  >
+    <a-form layout="vertical">
+      <a-form-item label="会员套餐">
+        <a-select v-model:value="createForm.planId" placeholder="请选择套餐">
+          <a-select-option
+            v-for="item in plans"
+            :key="item.id"
+            :value="item.id"
+          >
+            {{ item.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item label="数量">
+        <a-input-number
+          v-model:value="createForm.quantity"
+          :min="1"
+          :max="200"
+          class="w-full"
+        />
+      </a-form-item>
+      <a-form-item label="批次号">
+        <a-input v-model:value="createForm.batchNo" />
+      </a-form-item>
+      <a-form-item label="渠道">
+        <a-input v-model:value="createForm.channel" />
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>

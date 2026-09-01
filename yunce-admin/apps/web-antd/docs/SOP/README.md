@@ -54,4 +54,4 @@
 | [PRE-PUSH-CHECKS.md](./PRE-PUSH-CHECKS.md) | 推送前按范围检查 |
 | [RELEASE-TEST-SOP.md](./RELEASE-TEST-SOP.md) | `dashboard-ci-*` / `dashboard-v*` |
 | AGENTS.md（web-antd 根） | 产品硬性约定 |
-| [../adr/](../adr/) | ADR-0001 ~ 0003 |
+| [../adr/](../adr/) | ADR-0001 ~ 0004 |

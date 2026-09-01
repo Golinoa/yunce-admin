@@ -22,7 +22,7 @@
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit --skipLibCheck",
     "test": "vitest run --config vitest.config.ts",
-    "test:ci": "vitest run --config vitest.config.ts"
+    "test:ci": "vitest run --config vitest.config.ts --coverage"
   },
   "imports": {
     "#/*": "./src/*"

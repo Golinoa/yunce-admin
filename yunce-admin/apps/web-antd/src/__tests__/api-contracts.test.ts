@@ -17,14 +17,29 @@ vi.mock('#/api/request', () => ({
 }));
 
 import {
+  batchCreateActivationCodesApi,
+  batchDeleteActivationCodesApi,
+  getActivationCodesApi,
+  getAuditLogsApi,
   getDashboardOverviewApi,
+  getFeedbacksApi,
+  getMembershipsApi,
+  getUsersApi,
   grantMembershipApi,
+  updateFeedbackHandleApi,
   voidActivationCodeApi,
 } from '#/api/core/admin';
 import {
   approveOrganizationApi,
+  approveStoreEntryApplicationApi,
   freezeOrganizationApi,
+  getOrganizationQuotaUsageApi,
   getOrganizationsApi,
+  getOrganizationVersionsApi,
+  getStoreEntryApplicationsApi,
+  rejectOrganizationApi,
+  rejectStoreEntryApplicationApi,
+  unfreezeOrganizationApi,
 } from '#/api/core/organization';
 
 describe('admin api contracts', () => {
@@ -35,24 +50,54 @@ describe('admin api contracts', () => {
     del.mockReset();
     get.mockResolvedValue({});
     post.mockResolvedValue({});
+    put.mockResolvedValue({});
+    del.mockResolvedValue({});
   });
 
-  it('getDashboardOverviewApi passes days', async () => {
+  it('covers dashboard / users / feedback / membership / activation paths', async () => {
     await getDashboardOverviewApi(7);
     expect(get).toHaveBeenCalledWith('/dashboard/overview', {
       params: { days: 7 },
     });
-  });
 
-  it('voidActivationCodeApi posts void path', async () => {
+    await getAuditLogsApi({ page: 1 });
+    expect(get).toHaveBeenCalledWith('/audit-logs', { params: { page: 1 } });
+
+    await getFeedbacksApi({ page: 1 });
+    expect(get).toHaveBeenCalledWith('/feedbacks', { params: { page: 1 } });
+
+    await updateFeedbackHandleApi('f1', { handleStatus: 'RESOLVED' });
+    expect(put).toHaveBeenCalledWith('/feedbacks/f1/handle', {
+      handleStatus: 'RESOLVED',
+    });
+
+    await getUsersApi({ page: 1 });
+    expect(get).toHaveBeenCalledWith('/users', { params: { page: 1 } });
+
+    await getMembershipsApi({ page: 1 });
+    expect(get).toHaveBeenCalledWith('/memberships', { params: { page: 1 } });
+
+    const grant = { userId: 'u1', planId: 'p1' };
+    await grantMembershipApi(grant);
+    expect(post).toHaveBeenCalledWith('/memberships/grant', grant);
+
+    await getActivationCodesApi({ page: 1 });
+    expect(get).toHaveBeenCalledWith('/activation-codes', {
+      params: { page: 1 },
+    });
+
+    await batchCreateActivationCodesApi({ count: 2 });
+    expect(post).toHaveBeenCalledWith('/activation-codes/batch-create', {
+      count: 2,
+    });
+
+    await batchDeleteActivationCodesApi({ ids: ['a'] });
+    expect(del).toHaveBeenCalledWith('/activation-codes', {
+      data: { ids: ['a'] },
+    });
+
     await voidActivationCodeApi('code-1');
     expect(post).toHaveBeenCalledWith('/activation-codes/code-1/void');
-  });
-
-  it('grantMembershipApi posts grant payload', async () => {
-    const payload = { userId: 'u1', planId: 'p1' };
-    await grantMembershipApi(payload);
-    expect(post).toHaveBeenCalledWith('/memberships/grant', payload);
   });
 });
 
@@ -64,17 +109,47 @@ describe('organization api contracts', () => {
     post.mockResolvedValue({});
   });
 
-  it('lists organizations with query', async () => {
+  it('covers org list / lifecycle / store-entry / versions / quota', async () => {
     await getOrganizationsApi({ page: 1, status: 'ACTIVE' });
     expect(get).toHaveBeenCalledWith('/organizations', {
       params: { page: 1, status: 'ACTIVE' },
     });
-  });
 
-  it('freezes and approves organization', async () => {
     await freezeOrganizationApi('org-1');
     expect(post).toHaveBeenCalledWith('/organizations/org-1/freeze');
+
+    await unfreezeOrganizationApi('org-1');
+    expect(post).toHaveBeenCalledWith('/organizations/org-1/unfreeze');
+
     await approveOrganizationApi('org-2');
     expect(post).toHaveBeenCalledWith('/organizations/org-2/approve');
+
+    await rejectOrganizationApi('org-3', { reason: 'x' });
+    expect(post).toHaveBeenCalledWith('/organizations/org-3/reject', {
+      reason: 'x',
+    });
+
+    await getStoreEntryApplicationsApi({ page: 1 });
+    expect(get).toHaveBeenCalledWith('/store-entry/applications', {
+      params: { page: 1 },
+    });
+
+    await approveStoreEntryApplicationApi('s1', { isTest: true });
+    expect(post).toHaveBeenCalledWith('/store-entry/applications/s1/approve', {
+      isTest: true,
+    });
+
+    await rejectStoreEntryApplicationApi('s2', { reason: 'bad' });
+    expect(post).toHaveBeenCalledWith('/store-entry/applications/s2/reject', {
+      reason: 'bad',
+    });
+
+    await getOrganizationVersionsApi();
+    expect(get).toHaveBeenCalledWith('/organization-versions', {
+      params: undefined,
+    });
+
+    await getOrganizationQuotaUsageApi('org-9');
+    expect(get).toHaveBeenCalledWith('/organizations/org-9/quota-usage');
   });
 });

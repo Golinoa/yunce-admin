@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatDateTime,
   formatNumber,
   formatPercent,
   resolveDaysLeftText,
@@ -17,15 +18,26 @@ describe('dashboard-format', () => {
     expect(formatNumber(1234)).toBe('1,234');
     expect(formatNumber(null)).toBe('0');
     expect(formatPercent(12.345)).toBe('12.35%');
+    expect(formatPercent(null)).toBe('0.00%');
   });
 
-  it('resolves display labels', () => {
+  it('formats datetime and resolves display labels', () => {
+    expect(formatDateTime(null)).toBe('-');
+    expect(formatDateTime('2024-01-02T03:04:05.000Z')).toContain('2024');
     expect(resolveDisplayName({ name: '张三' })).toBe('张三');
     expect(resolveDisplayName({ nickname: '小张' })).toBe('小张');
     expect(resolveDisplayName({})).toBe('未命名用户');
     expect(resolveFeedbackTypeLabel('BUG')).toBe('问题反馈');
+    expect(resolveFeedbackTypeLabel('FEATURE')).toBe('功能建议');
+    expect(resolveFeedbackTypeLabel('OTHER')).toBe('其他反馈');
     expect(resolveHandleStatusLabel('PENDING')).toBe('待处理');
+    expect(resolveHandleStatusLabel('PROCESSING')).toBe('处理中');
+    expect(resolveHandleStatusLabel('RESOLVED')).toBe('已解决');
+    expect(resolveHandleStatusLabel('CLOSED')).toBe('已关闭');
+    expect(resolveHandleStatusColor('PENDING')).toBe('red');
+    expect(resolveHandleStatusColor('PROCESSING')).toBe('orange');
     expect(resolveHandleStatusColor('RESOLVED')).toBe('green');
+    expect(resolveHandleStatusColor('CLOSED')).toBe('default');
   });
 
   it('computes membership and health helpers', () => {

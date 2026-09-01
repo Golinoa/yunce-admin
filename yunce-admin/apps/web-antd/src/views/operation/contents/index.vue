@@ -11,6 +11,7 @@ import {
   updateActivityApi,
   updateBannerApi,
 } from '#/api';
+import { confirmAction } from '#/utils/confirm-action';
 
 type BannerStatus = 'ACTIVE' | 'INACTIVE';
 type ActivityStatus = 'ACTIVE' | 'DRAFT' | 'ENDED' | 'INACTIVE';
@@ -142,6 +143,14 @@ async function handleCreateBanner() {
     return;
   }
 
+  const ok = await confirmAction({
+    content: editingBannerId.value
+      ? `确认更新轮播图「${bannerForm.title}」？`
+      : `确认创建轮播图「${bannerForm.title}」？`,
+    title: editingBannerId.value ? '确认更新轮播图' : '确认创建轮播图',
+  });
+  if (!ok) return;
+
   const payload = {
     ...bannerForm,
     jumpValue: bannerForm.jumpValue || undefined,
@@ -167,6 +176,13 @@ async function handleCreateActivity() {
     return;
   }
 
+  const ok = await confirmAction({
+    content: editingActivityId.value
+      ? `确认更新活动「${activityForm.title}」？`
+      : `确认创建活动「${activityForm.title}」？`,
+    title: editingActivityId.value ? '确认更新活动' : '确认创建活动',
+  });
+  if (!ok) return;
   const payload = {
     ...activityForm,
     content: activityForm.content || undefined,

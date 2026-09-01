@@ -33,6 +33,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     const accessStore = useAccessStore();
     const authStore = useAuthStore();
     accessStore.setAccessToken(null);
+    accessStore.setRefreshToken(null);
     if (
       preferences.app.loginExpiredMode === 'modal' &&
       accessStore.isAccessChecked
@@ -47,7 +48,22 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
    * 刷新token逻辑
    */
   async function doRefreshToken(): Promise<string> {
-    throw new Error('Refresh token is disabled');
+    const accessStore = useAccessStore();
+    const refreshToken = accessStore.refreshToken;
+    if (!refreshToken) {
+      throw new Error('No refresh token');
+    }
+    const resp = await client.post<{
+      accessToken: string;
+      expiresIn?: number;
+      refreshToken?: string;
+    }>('/auth/refresh', { refreshToken });
+    const newToken = resp.accessToken;
+    accessStore.setAccessToken(newToken);
+    if (resp.refreshToken) {
+      accessStore.setRefreshToken(resp.refreshToken);
+    }
+    return newToken;
   }
 
   function formatToken(token: null | string) {

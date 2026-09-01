@@ -10,6 +10,7 @@ import {
   grantMembershipApi,
   updateMembershipPlanApi,
 } from '#/api';
+import { confirmAction } from '#/utils/confirm-action';
 
 type MembershipSource = 'ACTIVATION_CODE' | 'MANUAL' | 'POINT_EXCHANGE';
 type MembershipStatus = 'ACTIVE' | 'EXPIRED';
@@ -203,6 +204,12 @@ async function handleGrantMembership() {
     message.error('请输入用户 ID');
     return;
   }
+  const ok = await confirmAction({
+    content: `将为用户 ${grantForm.profileId} 开通会员，确认继续？`,
+    okType: 'danger',
+    title: '确认开通会员',
+  });
+  if (!ok) return;
   await grantMembershipApi({
     ...grantForm,
     remark: grantForm.remark || undefined,
@@ -217,6 +224,12 @@ async function handleTogglePlanStatus(
   record: MembershipPlanRecord,
   checked: boolean,
 ) {
+  const ok = await confirmAction({
+    content: `确认${checked ? '启用' : '停用'}套餐「${record.name}」？`,
+    okType: checked ? 'primary' : 'danger',
+    title: checked ? '确认启用套餐' : '确认停用套餐',
+  });
+  if (!ok) return;
   await updateMembershipPlanApi(record.id, {
     durationDays: record.durationDays,
     isActive: checked,

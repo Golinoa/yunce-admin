@@ -23,6 +23,15 @@ export async function loginApi(data: AuthApi.LoginParams) {
 }
 
 /**
+ * 刷新令牌（无需 accessToken）
+ */
+export async function refreshTokenApi(data: { refreshToken: string }) {
+  return requestClient.post<AuthApi.LoginResult>('/auth/refresh', data, {
+    withCredentials: false,
+  });
+}
+
+/**
  * 修改当前管理员密码（成功后需重新登录）
  */
 export async function changePasswordApi(data: {

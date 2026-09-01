@@ -10,8 +10,9 @@ import type {
 
 import { computed, onMounted, reactive, ref } from 'vue';
 
-import { message } from 'ant-design-vue';
 import { useUserStore } from '@vben/stores';
+
+import { message } from 'ant-design-vue';
 
 import {
   adjustOrganizationExpireApi,

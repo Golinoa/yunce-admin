@@ -10,6 +10,7 @@ import {
   getPointRecordsApi,
   saveInviteRuleApi,
 } from '#/api';
+import { confirmAction } from '#/utils/confirm-action';
 
 type PointType = 'EARN' | 'SPEND';
 type PointSource =
@@ -208,6 +209,11 @@ function openPointModal() {
 }
 
 async function handleSaveRule() {
+  const ok = await confirmAction({
+    content: `确认保存邀请规则「${ruleForm.name || ruleForm.taskKey}」？`,
+    title: '确认保存规则',
+  });
+  if (!ok) return;
   await saveInviteRuleApi(ruleForm.taskKey, ruleForm);
   message.success('邀请规则已保存');
   ruleOpen.value = false;
@@ -219,6 +225,12 @@ async function handleAdjustPoints() {
     message.error('请输入有效的用户 ID 和积分值');
     return;
   }
+  const ok = await confirmAction({
+    content: `确认为用户 ${pointForm.profileId} 调整积分 ${pointForm.amount}？`,
+    okType: 'danger',
+    title: '确认调整积分',
+  });
+  if (!ok) return;
   await adjustPointsApi(pointForm);
   message.success('积分调整成功');
   pointOpen.value = false;
@@ -226,6 +238,12 @@ async function handleAdjustPoints() {
 }
 
 async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
+  const ok = await confirmAction({
+    content: `确认${checked ? '启用' : '停用'}规则「${record.name}」？`,
+    okType: checked ? 'primary' : 'danger',
+    title: checked ? '确认启用规则' : '确认停用规则',
+  });
+  if (!ok) return;
   await saveInviteRuleApi(record.taskKey, {
     enabled: checked,
     inviteePointsReward: record.inviteePointsReward,

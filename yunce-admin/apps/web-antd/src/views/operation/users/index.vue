@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 
 import { adjustPointsApi, getUserDetailApi, getUsersApi } from '#/api';
+import { confirmAction } from '#/utils/confirm-action';
 
 import OperationTablePage from '../components/OperationTablePage.vue';
 
@@ -147,6 +148,12 @@ async function handleAdjustPoints() {
     message.error('请输入有效的积分调整值');
     return;
   }
+  const ok = await confirmAction({
+    content: `确认为用户 ${adjustForm.profileId} 调整积分 ${adjustForm.amount}？`,
+    okType: 'danger',
+    title: '确认调整积分',
+  });
+  if (!ok) return;
   await adjustPointsApi(adjustForm);
   message.success('积分调整成功');
   adjustOpen.value = false;

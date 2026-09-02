@@ -75,7 +75,8 @@
     "verify:scope": "node ./scripts/change-scope.mjs",
     "update:deps": "npx taze -r -w",
     "version": "pnpm exec changeset version && pnpm install --no-frozen-lockfile",
-    "catalog": "pnpm dlx codemod pnpm/catalog"
+    "catalog": "pnpm dlx codemod pnpm/catalog",
+    "ci:local": "pnpm run verify:sop"
   },
   "devDependencies": {
     "@changesets/changelog-github": "catalog:",

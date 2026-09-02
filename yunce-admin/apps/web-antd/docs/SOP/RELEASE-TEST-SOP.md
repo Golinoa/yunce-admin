@@ -11,12 +11,25 @@
 > 推荐一律用 **`v1.0.12` 这种 v 前缀语义化版本**。  
 > 本仓 `v*` 只发运营后台；后端 API 的 `v*` 在 **独立 backend 仓库**，互不冲突。
 
-## 本地发版前
+## 本地发版前（= 模拟 CI）
 
 ```bash
 cd yunce-admin
 pnpm run verify:sop
 ```
+
+这条命令与云端 `verify:sop（发版前）` **同一串步骤**，打 `v*` 前必须本地绿：
+
+`check:type:antd` → `lint:antd` → `check:env` → `test:ci:antd` → `build:antd` → `check:compat` → `audit:ci`
+
+### 对齐过的坑（以后应能本地跑出来）
+
+| 坑 | 以前 | 现在 |
+|----|------|------|
+| ESLint（如 `define-macros-order`） | 只跑 `test`/`vue-tsc` 会漏 | 已在 `lint:antd`；**务必跑完整 verify:sop** |
+| `audit:ci` + npmmirror 无 audit 端点 | 本地 WARN 跳过、CI 硬红 | 强制 `registry.npmjs.org`，本地默认也红；勿设 `AUDIT_ALLOW_SKIP=1` 发版 |
+
+云端多出来的只有：Docker 构建 + Secret 注入 + 部署（本地 `verify:sop` 不覆盖）。
 
 ## 云端只验
 

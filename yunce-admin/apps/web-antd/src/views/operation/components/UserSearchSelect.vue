@@ -11,8 +11,6 @@ import {
   type UserPickerRecord,
 } from '#/utils/user-picker';
 
-const model = defineModel<string>({ default: '' });
-
 const props = withDefaults(
   defineProps<{
     placeholder?: string;
@@ -21,6 +19,8 @@ const props = withDefaults(
     placeholder: '输入姓名或手机号搜索',
   },
 );
+
+const model = defineModel<string>({ default: '' });
 
 const options = ref<UserPickerOption[]>([]);
 const fetching = ref(false);

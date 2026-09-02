@@ -16,6 +16,7 @@ describe('OperationTablePage shell', () => {
     expect(src).toContain('title: string');
     expect(src).toContain('name="filters"');
     expect(src).toContain('name="actions"');
+    expect(src).toContain('name="summary"');
     expect(src).toContain('operation-table-page');
   });
 });

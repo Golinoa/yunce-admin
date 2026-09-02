@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { message } from 'ant-design-vue';
 
@@ -11,6 +12,9 @@ import {
   updateMembershipPlanApi,
 } from '#/api';
 import { confirmAction } from '#/utils/confirm-action';
+import { resolveRouteQueryString } from '#/utils/ops-nav';
+
+import UserSearchSelect from '../components/UserSearchSelect.vue';
 
 type MembershipSource = 'ACTIVATION_CODE' | 'MANUAL' | 'POINT_EXCHANGE';
 type MembershipStatus = 'ACTIVE' | 'EXPIRED';
@@ -47,6 +51,7 @@ interface MembershipGrantRecord {
   status: MembershipStatus;
 }
 
+const route = useRoute();
 const loading = ref(false);
 const plans = ref<MembershipPlanRecord[]>([]);
 const grants = ref<MembershipGrantRecord[]>([]);
@@ -138,6 +143,15 @@ function resetGrantForm() {
   grantForm.source = 'MANUAL';
 }
 
+function applyRouteQuery() {
+  const profileId = resolveRouteQueryString(route.query, 'profileId');
+  const status = resolveRouteQueryString(route.query, 'status');
+  if (profileId) filters.profileId = profileId;
+  if (status === 'ACTIVE' || status === 'EXPIRED') {
+    filters.status = status;
+  }
+}
+
 async function fetchData() {
   loading.value = true;
   try {
@@ -182,7 +196,10 @@ function openGrantModal() {
   grantOpen.value = true;
 }
 
-onMounted(fetchData);
+onMounted(() => {
+  applyRouteQuery();
+  void fetchData();
+});
 
 async function handleCreatePlan() {
   if (!planForm.name.trim()) {
@@ -201,11 +218,11 @@ async function handleCreatePlan() {
 
 async function handleGrantMembership() {
   if (!grantForm.profileId.trim()) {
-    message.error('请输入用户 ID');
+    message.error('请先搜索并选择用户');
     return;
   }
   const ok = await confirmAction({
-    content: `将为用户 ${grantForm.profileId} 开通会员，确认继续？`,
+    content: `将为所选用户开通会员，确认继续？`,
     okType: 'danger',
     title: '确认开通会员',
   });
@@ -288,13 +305,13 @@ async function handleTogglePlanStatus(
       </a-card>
       <a-card title="用户会员开通记录" :bordered="false">
         <a-form layout="inline" class="mb-4">
-          <a-form-item label="用户 ID">
-            <a-input
-              v-model:value="filters.profileId"
-              allow-clear
-              placeholder="输入用户 ID"
-              @press-enter="handleSearch"
-            />
+          <a-form-item label="用户">
+            <div style="width: 240px">
+              <UserSearchSelect
+                v-model="filters.profileId"
+                placeholder="姓名 / 手机号搜索"
+              />
+            </div>
           </a-form-item>
           <a-form-item label="来源">
             <a-select
@@ -420,11 +437,8 @@ async function handleTogglePlanStatus(
       @ok="handleGrantMembership"
     >
       <a-form layout="vertical">
-        <a-form-item label="用户 ID">
-          <a-input
-            v-model:value="grantForm.profileId"
-            placeholder="请输入用户 ID"
-          />
+        <a-form-item label="选择用户">
+          <UserSearchSelect v-model="grantForm.profileId" />
         </a-form-item>
         <a-alert
           type="info"

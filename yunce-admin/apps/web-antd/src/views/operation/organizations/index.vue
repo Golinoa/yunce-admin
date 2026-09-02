@@ -26,10 +26,11 @@ import {
   unbindOrganizationOwnerApi,
   unfreezeOrganizationApi,
 } from '#/api';
+import { confirmAction } from '#/utils/confirm-action';
 import {
   buildVersionSelectOptions,
   formatVersionLabel,
-  mergeOrganizationVersionCatalog,
+  listOrganizationVersionsFromApi,
   versionColor as resolveVersionColor,
 } from '#/utils/organization-version';
 
@@ -193,7 +194,7 @@ async function fetchOrganizations() {
 async function loadVersionDefinitions() {
   try {
     const versionResult = await getOrganizationVersionsApi();
-    versionDefinitions.value = mergeOrganizationVersionCatalog(
+    versionDefinitions.value = listOrganizationVersionsFromApi(
       versionResult.list,
     );
   } catch {
@@ -325,18 +326,37 @@ async function handleUnfreeze(record: OrganizationItem) {
 }
 
 async function handleToggleIsTest(record: OrganizationItem, isTest: boolean) {
+  const ok = await confirmAction({
+    content: isTest
+      ? `将「${record.name}」标记为测试机构？标记后可解散或解绑负责人`
+      : `取消「${record.name}」的测试标记？取消后不可再解散`,
+    title: isTest ? '标记测试机构' : '取消测试标记',
+  });
+  if (!ok) return;
   await setOrganizationIsTestApi(record.id, { isTest });
   message.success(isTest ? '已标记为测试机构' : '已取消测试机构标记');
   await fetchOrganizations();
 }
 
 async function handleDissolve(record: OrganizationItem) {
+  const ok = await confirmAction({
+    content: `解散测试机构「${record.name}」？将永久删除该机构全部数据，不可恢复`,
+    okType: 'danger',
+    title: '确认解散机构',
+  });
+  if (!ok) return;
   await dissolveOrganizationApi(record.id);
   message.success(`测试机构「${record.name}」已解散，数据已删除`);
   await fetchOrganizations();
 }
 
 async function handleUnbindOwner(record: OrganizationItem) {
+  const ok = await confirmAction({
+    content: `解绑「${record.name}」负责人？对方可重新申请入驻，机构将冻结`,
+    okType: 'danger',
+    title: '确认解绑负责人',
+  });
+  if (!ok) return;
   await unbindOrganizationOwnerApi(record.id);
   message.success('负责人已解绑，对方可重新申请入驻其他门店');
   await fetchOrganizations();
@@ -549,54 +569,48 @@ onMounted(async () => {
                   <a-button danger type="link" size="small">冻结</a-button>
                 </a-popconfirm>
               </template>
-              <a-button
-                type="link"
-                size="small"
-                @click="openExpireModal(record)"
-              >
-                有效期
-              </a-button>
-              <a-popconfirm
-                v-if="!record.isTest"
-                :title="`将「${record.name}」标记为测试机构？标记后可解散或解绑负责人`"
-                ok-text="标记"
-                cancel-text="取消"
-                @confirm="handleToggleIsTest(record, true)"
-              >
-                <a-button type="link" size="small">标为测试</a-button>
-              </a-popconfirm>
-              <template v-else>
-                <a-popconfirm
-                  :title="`取消「${record.name}」的测试标记？取消后不可再解散`"
-                  ok-text="取消标记"
-                  cancel-text="返回"
-                  @confirm="handleToggleIsTest(record, false)"
-                >
-                  <a-button type="link" size="small">取消测试</a-button>
-                </a-popconfirm>
-                <a-popconfirm
-                  v-if="record.ownerId"
-                  :title="`解绑「${record.name}」负责人？对方可重新申请入驻，机构将冻结`"
-                  ok-text="解绑"
-                  ok-type="danger"
-                  cancel-text="取消"
-                  @confirm="handleUnbindOwner(record)"
-                >
-                  <a-button danger type="link" size="small">
-                    解绑负责人
-                  </a-button>
-                </a-popconfirm>
-                <a-popconfirm
-                  v-if="isFullAdmin"
-                  :title="`解散测试机构「${record.name}」？将永久删除该机构全部数据，不可恢复`"
-                  ok-text="确认解散"
-                  ok-type="danger"
-                  cancel-text="取消"
-                  @confirm="handleDissolve(record)"
-                >
-                  <a-button danger type="link" size="small">解散</a-button>
-                </a-popconfirm>
-              </template>
+              <a-dropdown>
+                <a-button type="link" size="small">更多</a-button>
+                <template #overlay>
+                  <a-menu>
+                    <a-menu-item
+                      key="expire"
+                      @click="openExpireModal(record)"
+                    >
+                      有效期
+                    </a-menu-item>
+                    <a-menu-item
+                      v-if="!record.isTest"
+                      key="mark-test"
+                      @click="handleToggleIsTest(record, true)"
+                    >
+                      标为测试
+                    </a-menu-item>
+                    <template v-else>
+                      <a-menu-item
+                        key="unmark-test"
+                        @click="handleToggleIsTest(record, false)"
+                      >
+                        取消测试
+                      </a-menu-item>
+                      <a-menu-item
+                        v-if="record.ownerId"
+                        key="unbind"
+                        @click="handleUnbindOwner(record)"
+                      >
+                        解绑负责人
+                      </a-menu-item>
+                      <a-menu-item
+                        v-if="isFullAdmin"
+                        key="dissolve"
+                        @click="handleDissolve(record)"
+                      >
+                        解散
+                      </a-menu-item>
+                    </template>
+                  </a-menu>
+                </template>
+              </a-dropdown>
             </a-space>
           </template>
         </template>

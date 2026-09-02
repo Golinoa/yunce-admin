@@ -206,6 +206,12 @@ async function handleCreateActivity() {
 }
 
 async function handleToggleBannerStatus(record: BannerItem, checked: boolean) {
+  const ok = await confirmAction({
+    content: `确认${checked ? '启用' : '停用'}轮播图「${record.title}」？`,
+    okType: checked ? 'primary' : 'danger',
+    title: checked ? '确认启用轮播图' : '确认停用轮播图',
+  });
+  if (!ok) return;
   await updateBannerApi(record.id, {
     imageUrl: record.imageUrl,
     jumpType: record.jumpType,

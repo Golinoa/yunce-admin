@@ -9,6 +9,12 @@ import { useRouter } from 'vue-router';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 
 import { getDashboardOverviewApi } from '#/api';
+import {
+  buildActivationCodesLink,
+  buildFeedbackAlertLink,
+  buildMembershipAlertLink,
+  buildStoreEntryLink,
+} from '#/utils/ops-nav';
 
 import {
   DASHBOARD_WINDOW_OPTIONS,
@@ -66,6 +72,7 @@ interface QuickActionItem {
   key: string;
   metric: string;
   path: string;
+  query?: Record<string, string>;
   title: string;
 }
 
@@ -408,6 +415,10 @@ const alertList = computed<AlertItem[]>(() => {
 
 const quickActions = computed<QuickActionItem[]>(() => {
   const current = cards.value;
+  const membershipLink = buildMembershipAlertLink({ status: 'ACTIVE' });
+  const codesLink = buildActivationCodesLink();
+  const feedbackLink = buildFeedbackAlertLink({ handleStatus: 'PENDING' });
+  const storeLink = buildStoreEntryLink({ status: 'PENDING' });
 
   return [
     {
@@ -421,22 +432,33 @@ const quickActions = computed<QuickActionItem[]>(() => {
       description: '处理开通、激活码和会员归属问题',
       key: 'memberships',
       metric: `开通 ${formatNumber(current?.totalMembers ?? 0)}`,
-      path: '/operation/memberships',
+      path: membershipLink.path,
+      query: membershipLink.query,
       title: '会员管理',
     },
     {
       description: '检查激活码库存、批次和使用情况',
       key: 'codes',
       metric: `已用 ${formatNumber(current?.usedActivationCodes ?? 0)}`,
-      path: '/operation/activation-codes',
+      path: codesLink.path,
+      query: codesLink.query,
       title: '激活码管理',
     },
     {
       description: '查看反馈、处理备注和客诉状态',
       key: 'feedbacks',
       metric: `待处理 ${formatNumber(feedbackAlerts.value?.pendingCount ?? 0)}`,
-      path: '/operation/feedbacks',
+      path: feedbackLink.path,
+      query: feedbackLink.query,
       title: '使用反馈',
+    },
+    {
+      description: '处理待审核入驻申请',
+      key: 'store-entry',
+      metric: '入驻审核',
+      path: storeLink.path,
+      query: storeLink.query,
+      title: '入驻审核',
     },
   ];
 });
@@ -664,8 +686,39 @@ async function renderCharts() {
   ]);
 }
 
-function goTo(path: string) {
-  void router.push(path);
+function goTo(path: string, query?: Record<string, string>) {
+  void router.push({ path, query: query && Object.keys(query).length ? query : undefined });
+}
+
+function goMembershipList() {
+  const link = buildMembershipAlertLink({ status: 'ACTIVE' });
+  goTo(link.path, link.query);
+}
+
+function goFeedbackList() {
+  const link = buildFeedbackAlertLink({ handleStatus: 'PENDING' });
+  goTo(link.path, link.query);
+}
+
+function goMembershipAlert(item: {
+  profile: { id: string };
+}) {
+  const link = buildMembershipAlertLink({
+    profileId: item.profile.id,
+    status: 'ACTIVE',
+  });
+  goTo(link.path, link.query);
+}
+
+function goFeedbackAlert(item: {
+  handleStatus: 'CLOSED' | 'PENDING' | 'PROCESSING' | 'RESOLVED';
+  profile: { phone?: null | string };
+}) {
+  const link = buildFeedbackAlertLink({
+    handleStatus: item.handleStatus,
+    keyword: item.profile.phone || undefined,
+  });
+  goTo(link.path, link.query);
 }
 
 watch(
@@ -751,7 +804,7 @@ onMounted(async () => {
           <a-card :bordered="false" class="chart-card" :loading="loading">
             <template #title>会员到期预警</template>
             <template #extra>
-              <a-button type="link" @click="goTo('/operation/memberships')">
+              <a-button type="link" @click="goMembershipList">
                 查看会员管理
               </a-button>
             </template>
@@ -766,10 +819,12 @@ onMounted(async () => {
               </div>
             </div>
             <div class="task-list">
-              <div
+              <button
                 v-for="item in membershipAlerts?.list ?? []"
                 :key="item.id"
-                class="task-item"
+                type="button"
+                class="task-item task-item--clickable"
+                @click="goMembershipAlert(item)"
               >
                 <div class="task-item__header">
                   <div class="task-item__title-wrap">
@@ -789,7 +844,7 @@ onMounted(async () => {
                   <span>手机号 {{ item.profile.phone || '-' }}</span>
                   <span>套餐 {{ item.planName || '未绑定套餐' }}</span>
                 </div>
-              </div>
+              </button>
               <a-empty
                 v-if="(membershipAlerts?.list?.length ?? 0) === 0"
                 description="当前 30 天内暂无会员到期预警"
@@ -802,7 +857,7 @@ onMounted(async () => {
           <a-card :bordered="false" class="chart-card" :loading="loading">
             <template #title>待处理反馈</template>
             <template #extra>
-              <a-button type="link" @click="goTo('/operation/feedbacks')">
+              <a-button type="link" @click="goFeedbackList">
                 查看反馈中心
               </a-button>
             </template>
@@ -817,10 +872,12 @@ onMounted(async () => {
               </div>
             </div>
             <div class="task-list">
-              <div
+              <button
                 v-for="item in feedbackAlerts?.list ?? []"
                 :key="item.id"
-                class="task-item"
+                type="button"
+                class="task-item task-item--clickable"
+                @click="goFeedbackAlert(item)"
               >
                 <div class="task-item__header">
                   <div class="task-item__title-wrap">
@@ -841,7 +898,7 @@ onMounted(async () => {
                   <span>手机号 {{ item.profile.phone || '-' }}</span>
                   <span>提交时间 {{ formatDateTime(item.createdAt) }}</span>
                 </div>
-              </div>
+              </button>
               <a-empty
                 v-if="(feedbackAlerts?.list?.length ?? 0) === 0"
                 description="当前没有待处理反馈"
@@ -904,7 +961,7 @@ onMounted(async () => {
                 :key="item.key"
                 class="quick-card"
                 type="button"
-                @click="goTo(item.path)"
+                @click="goTo(item.path, item.query)"
               >
                 <div class="quick-card__title">{{ item.title }}</div>
                 <div class="quick-card__metric">{{ item.metric }}</div>
@@ -1267,6 +1324,18 @@ onMounted(async () => {
   background: rgb(250 251 253 / 100%);
   border: 1px solid rgb(5 5 5 / 6%);
   border-radius: 12px;
+}
+
+.task-item--clickable {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.task-item--clickable:hover {
+  background: rgb(240 247 255 / 100%);
+  border-color: rgb(22 119 255 / 28%);
 }
 
 .task-item__header {

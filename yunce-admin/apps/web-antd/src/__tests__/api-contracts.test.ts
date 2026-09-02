@@ -30,14 +30,12 @@ import {
   voidActivationCodeApi,
 } from '#/api/core/admin';
 import {
-  approveOrganizationApi,
   approveStoreEntryApplicationApi,
   freezeOrganizationApi,
   getOrganizationQuotaUsageApi,
   getOrganizationsApi,
   getOrganizationVersionsApi,
   getStoreEntryApplicationsApi,
-  rejectOrganizationApi,
   rejectStoreEntryApplicationApi,
   unfreezeOrganizationApi,
 } from '#/api/core/organization';
@@ -120,14 +118,6 @@ describe('organization api contracts', () => {
 
     await unfreezeOrganizationApi('org-1');
     expect(post).toHaveBeenCalledWith('/organizations/org-1/unfreeze');
-
-    await approveOrganizationApi('org-2');
-    expect(post).toHaveBeenCalledWith('/organizations/org-2/approve');
-
-    await rejectOrganizationApi('org-3', { reason: 'x' });
-    expect(post).toHaveBeenCalledWith('/organizations/org-3/reject', {
-      reason: 'x',
-    });
 
     await getStoreEntryApplicationsApi({ page: 1 });
     expect(get).toHaveBeenCalledWith('/store-entry/applications', {

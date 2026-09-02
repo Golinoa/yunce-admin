@@ -2,6 +2,7 @@
 import type { FeedbackHandleStatus, FeedbackItem, FeedbackType } from '#/api';
 
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { message } from 'ant-design-vue';
 
@@ -10,9 +11,11 @@ import {
   getFeedbacksApi,
   updateFeedbackHandleApi,
 } from '#/api';
+import { resolveRouteQueryString } from '#/utils/ops-nav';
 
 import OperationTablePage from '../components/OperationTablePage.vue';
 
+const route = useRoute();
 const loading = ref(false);
 const detailLoading = ref(false);
 const handleSubmitting = ref(false);
@@ -101,6 +104,20 @@ const tableData = computed(() =>
   })),
 );
 
+function applyRouteQuery() {
+  const keyword = resolveRouteQueryString(route.query, 'keyword');
+  const handleStatus = resolveRouteQueryString(route.query, 'handleStatus');
+  if (keyword) filters.keyword = keyword;
+  if (
+    handleStatus === 'PENDING' ||
+    handleStatus === 'PROCESSING' ||
+    handleStatus === 'RESOLVED' ||
+    handleStatus === 'CLOSED'
+  ) {
+    filters.handleStatus = handleStatus;
+  }
+}
+
 async function fetchFeedbacks() {
   loading.value = true;
   try {
@@ -162,7 +179,10 @@ async function submitHandle() {
   }
 }
 
-onMounted(fetchFeedbacks);
+onMounted(() => {
+  applyRouteQuery();
+  void fetchFeedbacks();
+});
 </script>
 
 <template>

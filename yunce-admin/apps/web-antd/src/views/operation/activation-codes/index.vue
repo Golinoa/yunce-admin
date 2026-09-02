@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { message } from 'ant-design-vue';
 
@@ -10,6 +11,9 @@ import {
   getMembershipPlansApi,
   voidActivationCodeApi,
 } from '#/api';
+import { confirmAction } from '#/utils/confirm-action';
+import { summarizeActivationByChannel } from '#/utils/growth-summary';
+import { resolveRouteQueryString } from '#/utils/ops-nav';
 
 import OperationTablePage from '../components/OperationTablePage.vue';
 
@@ -38,8 +42,10 @@ interface MembershipPlanOption {
   name: string;
 }
 
+const route = useRoute();
 const loading = ref(false);
 const records = ref<ActivationCodeRecord[]>([]);
+const summaryRecords = ref<ActivationCodeRecord[]>([]);
 const plans = ref<MembershipPlanOption[]>([]);
 const selectedRowKeys = ref<string[]>([]);
 const createOpen = ref(false);
@@ -75,6 +81,14 @@ const statusLabelMap: Record<ActivationCodeStatus, string> = {
   VOIDED: '已作废',
 };
 
+const channelSummary = computed(() =>
+  summarizeActivationByChannel(summaryRecords.value),
+);
+
+const summaryTruncated = computed(
+  () => pagination.total > summaryRecords.value.length,
+);
+
 function formatDateTime(value?: null | string) {
   if (!value) {
     return '-';
@@ -96,21 +110,44 @@ function canDeleteCode(record: ActivationCodeRecord) {
   return record.status === 'UNUSED' || record.status === 'VOIDED';
 }
 
+function applyRouteQuery() {
+  const channel = resolveRouteQueryString(route.query, 'channel');
+  const status = resolveRouteQueryString(route.query, 'status');
+  if (channel) filters.channel = channel;
+  if (
+    status === 'UNUSED' ||
+    status === 'USED' ||
+    status === 'EXPIRED' ||
+    status === 'VOIDED'
+  ) {
+    filters.status = status;
+  }
+}
+
 async function fetchCodes() {
   loading.value = true;
   try {
-    const [result, planResult] = await Promise.all([
+    const listParams = {
+      batchNo: filters.batchNo || undefined,
+      channel: filters.channel || undefined,
+      code: filters.code || undefined,
+      status: filters.status,
+    };
+    const [result, summaryResult, planResult] = await Promise.all([
       getActivationCodesApi({
-        batchNo: filters.batchNo || undefined,
-        channel: filters.channel || undefined,
-        code: filters.code || undefined,
+        ...listParams,
         page: pagination.page,
         pageSize: pagination.pageSize,
-        status: filters.status,
+      }),
+      getActivationCodesApi({
+        ...listParams,
+        page: 1,
+        pageSize: 200,
       }),
       getMembershipPlansApi(),
     ]);
     records.value = result.list;
+    summaryRecords.value = summaryResult.list;
     pagination.total = result.pagination.total;
     plans.value = planResult;
     selectedRowKeys.value = selectedRowKeys.value.filter((id) =>
@@ -150,6 +187,11 @@ async function handleCreate() {
     message.error('请选择会员套餐');
     return;
   }
+  const ok = await confirmAction({
+    content: `将生成 ${createForm.quantity} 个激活码（渠道：${createForm.channel || '未填'}），确认继续？`,
+    title: '确认批量生成激活码',
+  });
+  if (!ok) return;
   await batchCreateActivationCodesApi(createForm);
   message.success('激活码生成成功');
   createOpen.value = false;
@@ -174,11 +216,32 @@ async function handleBatchDelete() {
   await fetchCodes();
 }
 
-onMounted(fetchCodes);
+onMounted(() => {
+  applyRouteQuery();
+  void fetchCodes();
+});
 </script>
 
 <template>
   <OperationTablePage title="激活码管理" :loading="loading">
+    <template #summary>
+      <a-space wrap>
+        <a-tag
+          v-for="item in channelSummary"
+          :key="item.channel"
+          color="blue"
+        >
+          {{ item.channel }}：发 {{ item.total }} / 用 {{ item.used }} / 剩
+          {{ item.unused }}
+        </a-tag>
+        <a-tag v-if="summaryTruncated" color="orange">
+          仅汇总前 {{ summaryRecords.length }} 条（共 {{ pagination.total }}）
+        </a-tag>
+        <span v-else-if="channelSummary.length === 0" class="text-gray-400">
+          暂无渠道汇总
+        </span>
+      </a-space>
+    </template>
     <template #filters>
       <a-form layout="inline">
         <a-form-item label="激活码">

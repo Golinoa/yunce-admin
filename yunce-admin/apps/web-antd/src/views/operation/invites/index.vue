@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
 import { message } from 'ant-design-vue';
 
@@ -11,6 +11,9 @@ import {
   saveInviteRuleApi,
 } from '#/api';
 import { confirmAction } from '#/utils/confirm-action';
+import { summarizeInviteRules } from '#/utils/growth-summary';
+
+import UserSearchSelect from '../components/UserSearchSelect.vue';
 
 type PointType = 'EARN' | 'SPEND';
 type PointSource =
@@ -75,6 +78,8 @@ const invitePagination = reactive({
   pageSize: 10,
   total: 0,
 });
+/** 全局邀请关系总数（不受关键词筛选影响） */
+const relationsTotal = ref(0);
 const pointPagination = reactive({
   page: 1,
   pageSize: 10,
@@ -117,6 +122,14 @@ const pointSourceLabelMap: Record<PointSource, string> = {
   MANUAL_ADJUST: '手工调整',
 };
 
+const inviteGrowthSummary = computed(() => {
+  const ruleSummary = summarizeInviteRules(rules.value);
+  return {
+    ...ruleSummary,
+    relations: relationsTotal.value,
+  };
+});
+
 function formatDateTime(value?: null | string) {
   if (!value) {
     return '-';
@@ -141,26 +154,32 @@ function formatPointSource(value?: null | PointSource) {
 async function fetchData() {
   loading.value = true;
   try {
-    const [inviteResult, pointResult, ruleResult] = await Promise.all([
-      getInvitesApi({
-        keyword: inviteFilters.keyword || undefined,
-        page: invitePagination.page,
-        pageSize: invitePagination.pageSize,
-      }),
-      getPointRecordsApi({
-        page: pointPagination.page,
-        pageSize: pointPagination.pageSize,
-        profileId: pointFilters.profileId || undefined,
-        source: pointFilters.source,
-        type: pointFilters.type,
-      }),
-      getInviteRulesApi(),
-    ]);
+    const [inviteResult, pointResult, ruleResult, relationsResult] =
+      await Promise.all([
+        getInvitesApi({
+          keyword: inviteFilters.keyword || undefined,
+          page: invitePagination.page,
+          pageSize: invitePagination.pageSize,
+        }),
+        getPointRecordsApi({
+          page: pointPagination.page,
+          pageSize: pointPagination.pageSize,
+          profileId: pointFilters.profileId || undefined,
+          source: pointFilters.source,
+          type: pointFilters.type,
+        }),
+        getInviteRulesApi(),
+        getInvitesApi({
+          page: 1,
+          pageSize: 1,
+        }),
+      ]);
     invites.value = inviteResult.list;
     invitePagination.total = inviteResult.pagination.total;
     pointRecords.value = pointResult.list;
     pointPagination.total = pointResult.pagination.total;
     rules.value = ruleResult;
+    relationsTotal.value = relationsResult.pagination.total;
   } finally {
     loading.value = false;
   }
@@ -222,11 +241,11 @@ async function handleSaveRule() {
 
 async function handleAdjustPoints() {
   if (!pointForm.profileId.trim() || pointForm.amount === 0) {
-    message.error('请输入有效的用户 ID 和积分值');
+    message.error('请先选择用户并输入有效积分值');
     return;
   }
   const ok = await confirmAction({
-    content: `确认为用户 ${pointForm.profileId} 调整积分 ${pointForm.amount}？`,
+    content: `确认为所选用户调整积分 ${pointForm.amount}？`,
     okType: 'danger',
     title: '确认调整积分',
   });
@@ -260,7 +279,17 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
     <a-space direction="vertical" size="middle" class="w-full">
       <a-card title="邀请规则" :bordered="false">
         <template #extra>
-          <a-button @click="openPointModal">手工调积分</a-button>
+          <a-space>
+            <a-tag color="green">
+              规则启用 {{ inviteGrowthSummary.enabled }}/{{
+                inviteGrowthSummary.total
+              }}
+            </a-tag>
+            <a-tag color="blue">
+              邀请关系 {{ inviteGrowthSummary.relations }}
+            </a-tag>
+            <a-button @click="openPointModal">手工调积分</a-button>
+          </a-space>
         </template>
         <a-table
           :columns="[
@@ -362,13 +391,10 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
       </a-card>
       <a-card title="积分流水" :bordered="false">
         <a-form layout="inline" class="mb-4">
-          <a-form-item label="用户 ID">
-            <a-input
-              v-model:value="pointFilters.profileId"
-              allow-clear
-              placeholder="输入用户 ID"
-              @press-enter="handleSearchPoints"
-            />
+          <a-form-item label="用户">
+            <div style="width: 240px">
+              <UserSearchSelect v-model="pointFilters.profileId" />
+            </div>
           </a-form-item>
           <a-form-item label="类型">
             <a-select
@@ -468,8 +494,8 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
       @ok="handleAdjustPoints"
     >
       <a-form layout="vertical">
-        <a-form-item label="用户 ID">
-          <a-input v-model:value="pointForm.profileId" />
+        <a-form-item label="选择用户">
+          <UserSearchSelect v-model="pointForm.profileId" />
         </a-form-item>
         <a-form-item label="积分变更">
           <a-input-number v-model:value="pointForm.amount" class="w-full" />

@@ -4,6 +4,9 @@ export default defineConfig(async () => {
   return {
     application: {},
     vite: {
+      optimizeDeps: {
+        include: ['xe-utils', '@vxe-ui/core', 'dom-zindex'],
+      },
       server: {
         proxy: {
           '/api/admin/v1': {

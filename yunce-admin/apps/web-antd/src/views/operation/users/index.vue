@@ -351,7 +351,7 @@ onMounted(fetchUsers);
   >
     <a-form layout="vertical">
       <a-form-item label="用户 ID">
-        <a-input v-model:value="adjustForm.profileId" />
+        <a-input v-model:value="adjustForm.profileId" disabled />
       </a-form-item>
       <a-form-item label="变更积分">
         <a-input-number v-model:value="adjustForm.amount" class="w-full" />

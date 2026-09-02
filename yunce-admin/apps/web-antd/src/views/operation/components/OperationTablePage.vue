@@ -13,6 +13,9 @@ defineProps<{
   <div class="operation-table-page p-5">
     <a-space direction="vertical" class="w-full" size="middle">
       <a-card :title="title" :bordered="false">
+        <div v-if="$slots.summary" class="mb-4">
+          <slot name="summary"></slot>
+        </div>
         <div v-if="$slots.filters" class="mb-4">
           <slot name="filters"></slot>
         </div>

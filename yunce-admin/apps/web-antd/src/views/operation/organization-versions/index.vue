@@ -16,8 +16,9 @@ import {
   updateFeatureMatrixApi,
   updateOrganizationVersionApi,
 } from '#/api';
+import { confirmAction } from '#/utils/confirm-action';
 import {
-  mergeOrganizationVersionCatalog,
+  listOrganizationVersionsFromApi,
   versionColor,
 } from '#/utils/organization-version';
 
@@ -135,7 +136,7 @@ async function fetchAll() {
       getOrganizationVersionsApi(),
       getFeatureModulesApi(),
     ]);
-    records.value = mergeOrganizationVersionCatalog(versionResult.list);
+    records.value = listOrganizationVersionsFromApi(versionResult.list);
     featureModules.value = moduleResult.list ?? [];
     rebuildMatrixDraft(records.value, featureModules.value);
   } catch {
@@ -253,6 +254,14 @@ function toggleMatrix(
 }
 
 async function saveMatrix() {
+  const ok = await confirmAction({
+    content:
+      '保存后即时影响 assertFeature / 小程序 entitlements，确认提交当前功能矩阵？',
+    okType: 'danger',
+    title: '确认保存功能矩阵',
+  });
+  if (!ok) return;
+
   savingMatrix.value = true;
   try {
     await updateFeatureMatrixApi({ matrix: matrixDraft.value });

@@ -85,37 +85,23 @@ export function normalizeOrganizationVersion(
   };
 }
 
-/** 合并接口列表与兜底目录；接口有的档位全部保留，缺省档位补齐 */
+/**
+ * 仅规范化接口返回的档位列表，不注入本地 fallback。
+ * 写操作（调版本 / 存矩阵）必须用此函数，避免把不存在的档位提交到后端。
+ */
+export function listOrganizationVersionsFromApi(
+  list: null | OrganizationVersionItem[] | undefined,
+): OrganizationVersionItem[] {
+  return (list ?? [])
+    .map((item) => normalizeOrganizationVersion(item))
+    .toSorted((a, b) => a.sort - b.sort || a.code.localeCompare(b.code));
+}
+
+/** @deprecated 别名，等同 listOrganizationVersionsFromApi（已不再注入 fallback） */
 export function mergeOrganizationVersionCatalog(
   list: null | OrganizationVersionItem[] | undefined,
 ): OrganizationVersionItem[] {
-  const byCode = new Map(
-    (list ?? []).map((item) => [item.code, normalizeOrganizationVersion(item)]),
-  );
-  const now = new Date().toISOString();
-  for (const [index, fallback] of DEFAULT_ORGANIZATION_VERSIONS.entries()) {
-    if (!byCode.has(fallback.code)) {
-      byCode.set(fallback.code, {
-        id: `fallback-${fallback.code}`,
-        code: fallback.code,
-        name: fallback.name,
-        description: fallback.description,
-        maxMembers: fallback.maxMembers,
-        maxEmployees: fallback.maxEmployees,
-        maxCampuses: fallback.maxCampuses,
-        features: fallback.features,
-        price: 0,
-        durationDays: 365,
-        status: 'active',
-        sort: index,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-  }
-  return [...byCode.values()].toSorted(
-    (a, b) => a.sort - b.sort || a.code.localeCompare(b.code),
-  );
+  return listOrganizationVersionsFromApi(list);
 }
 
 export function versionColor(code: OrganizationVersionCode | string) {

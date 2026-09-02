@@ -320,14 +320,6 @@ export function getOrganizationQuotaUsageApi(id: string) {
   );
 }
 
-export function approveOrganizationApi(id: string) {
-  return requestClient.post(`/organizations/${id}/approve`);
-}
-
-export function rejectOrganizationApi(id: string, data: { reason: string }) {
-  return requestClient.post(`/organizations/${id}/reject`, data);
-}
-
 export function freezeOrganizationApi(id: string) {
   return requestClient.post(`/organizations/${id}/freeze`);
 }

@@ -116,6 +116,7 @@ catalog:
   czg: ^1.13.1
   dayjs: ^1.11.21
   defu: ^6.1.7
+  dom-zindex: ^1.0.7
   dotenv: ^17.4.2
   echarts: ^6.1.0
   element-plus: ^2.14.2
@@ -206,8 +207,10 @@ catalog:
   vue-router: ^5.1.0
   vue-tippy: ^6.7.1
   vue-tsc: ^3.3.5
+  '@vxe-ui/core': ^4.4.14
   vxe-pc-ui: ^4.14.39
   vxe-table: ^4.19.14
+  xe-utils: ^4.0.9
   watermark-js-plus: ^1.6.3
   yaml-eslint-parser: ^2.0.0
   zod: ^3.25.76

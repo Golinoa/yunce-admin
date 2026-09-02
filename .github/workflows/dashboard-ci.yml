@@ -2,11 +2,12 @@ name: Yunce Dashboard CI
 
 # 触发约定（仓库根 = yunce-back）：
 # - 日常 push main：不跑
-# - 打 dashboard-ci-*：只跑质量门禁（不部署）
-# - 发版用 dashboard-v*：走 dashboard-release.yml
+# - 打 ci-* 或旧名 dashboard-ci-*：只跑质量门禁（不部署）
+# - 发版用 v*：走 dashboard-release.yml
 on:
   push:
     tags:
+      - 'ci-*'
       - 'dashboard-ci-*'
   workflow_dispatch:
 

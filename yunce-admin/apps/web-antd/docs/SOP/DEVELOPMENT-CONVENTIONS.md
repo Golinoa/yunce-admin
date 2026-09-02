@@ -19,7 +19,7 @@
 - commit message：Conventional Commits（commitlint）
 - 小改：`pnpm run verify:sop:fast`
 - 发版前：`pnpm run verify:sop`
-- 标签：`dashboard-ci-*` / `dashboard-v*`
+- 标签：`ci-*` / `vX.Y.Z`（兼容旧名 `dashboard-ci-*` / `dashboard-v*`）
 
 ## 密钥
 

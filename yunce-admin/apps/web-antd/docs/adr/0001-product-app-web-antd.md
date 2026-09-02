@@ -6,7 +6,7 @@
 
 ## Context
 
-yunce-admin 为 Vben monorepo，含多个 UI 变体。运营后台实际只交付 `apps/web-antd`，发版已用 `dashboard-ci-*` / `dashboard-v*`。
+yunce-admin 为 Vben monorepo，含多个 UI 变体。运营后台实际只交付 `apps/web-antd`，发版用 `ci-*` / `vX.Y.Z`（兼容旧 `dashboard-*` 前缀）。
 
 ## Decision
 

@@ -26,4 +26,4 @@
 
 ## 发版注意
 
-下次 `dashboard-v*` 前请配置 GitHub Secret：`VITE_APP_STORE_SECURE_KEY`（仓库内仅为占位）。
+下次 `v*` 发版前请配置 GitHub Secret：`VITE_APP_STORE_SECURE_KEY`（仓库内仅为占位）。

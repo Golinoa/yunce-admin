@@ -1,13 +1,15 @@
 name: Yunce Dashboard Release
 
 # 触发约定：
-# - 日常 push / dashboard-ci-*：不跑本流程
-# - 打 dashboard-v*：单条流水线 = quality + 推镜像 + 部署（不再另跑 CI）
+# - 日常 push / ci-*：不跑本流程
+# - 打 v*（推荐）或旧名 dashboard-v*：quality + 推镜像 + 部署
 # - 也可手动 workflow_dispatch
 # 仓库根目录为 yunce-back，Docker context = yunce-admin/
+# 注意：本仓 v* = 运营后台发版；后端 API 发版在独立 backend 仓的 v*
 on:
   push:
     tags:
+      - 'v*'
       - 'dashboard-v*'
   workflow_dispatch:
     inputs:
@@ -77,8 +79,20 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            REF="${GITHUB_REF#refs/tags/dashboard-v}"
-            echo "tag=${REF}" >> "$GITHUB_OUTPUT"
+            REF="${GITHUB_REF_NAME}"
+            case "${REF}" in
+              dashboard-v*) TAG="${REF#dashboard-v}" ;;
+              v*) TAG="${REF#v}" ;;
+              *)
+                echo "::error::无法从 tag ${REF} 解析版本号（期望 vX.Y.Z 或 dashboard-vX.Y.Z）"
+                exit 1
+                ;;
+            esac
+            if [ -z "${TAG}" ]; then
+              echo "::error::解析后的版本号为空"
+              exit 1
+            fi
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
           fi

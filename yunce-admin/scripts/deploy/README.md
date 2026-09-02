@@ -33,6 +33,7 @@ pnpm run build:antd          # 仅构建前端
    - `ACR_NAMESPACE`
    - `ACR_REGISTRY_USERNAME` / `ACR_REGISTRY_PASSWORD`
    - `SERVER_HOST` / `SERVER_USERNAME` / `SERVER_SSH_KEY`
+   - `VITE_APP_STORE_SECURE_KEY`（≥16，禁止占位串）
 
 2. 双远程推送 + 打 tag 发版：
 
@@ -40,12 +41,13 @@ pnpm run build:antd          # 仅构建前端
 cd yunce-back   # git 根目录
 
 # 日常同步
-git push origin master     # Gitee
-git push github master     # GitHub（触发 CI）
+git push origin main       # Gitee
+git push github main       # GitHub
 
-# 发版运营后台
-git tag dashboard-v1.0.0
-git push github dashboard-v1.0.0   # 触发构建镜像 + 部署
+# 发版运营后台（推荐 v 前缀）
+git tag -a v1.0.12 -m "release dashboard v1.0.12"
+git push github v1.0.12    # 触发构建镜像 + 部署
+# 旧名 dashboard-v* 仍兼容，但不推荐新打
 ```
 
 3. 或手动触发 Actions → **Yunce Dashboard Release** → Run workflow
@@ -90,6 +92,7 @@ curl -fsSk -X POST https://dashboard.chancore.cn/api/admin/v1/auth/login \
 
 ## 与 backend 发布的关系
 
-- **backend** tag `v*` → 只更新 API / nginx 镜像
-- **dashboard** tag `dashboard-v*` → 只更新运营后台前端镜像
-- 两者独立发版，共用同一台服务器 Docker Compose 网络
+- **backend**（独立仓库）tag `v*` → 只更新 API / nginx 镜像
+- **本仓（运营后台）** tag `v*` → 只更新运营后台前端镜像
+- 两者独立发版、独立仓库，共用同一台服务器 Docker Compose 网络
+- 旧名 `dashboard-v*` 仍可触发本仓发版，新发版请用 `vX.Y.Z`

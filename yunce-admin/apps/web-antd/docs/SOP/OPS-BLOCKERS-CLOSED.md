@@ -20,4 +20,4 @@
 2. Name: `VITE_APP_STORE_SECURE_KEY`  
 3. Value: 随机串 ≥16（**不要**用 `please-replace-me-with-your-own-key`）
 
-未配置时打 `dashboard-v*` 会失败——这是预期，避免带病发版。
+未配置时打 `v*`（如 `v1.0.12`）会失败——这是预期，避免带病发版。

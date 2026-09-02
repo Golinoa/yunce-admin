@@ -4,7 +4,7 @@
 
 ## 产品边界
 
-1. **唯一产品 app**：`apps/web-antd`。其它 UI 变体不进 `dashboard-ci-*` / `dashboard-v*`。
+1. **唯一产品 app**：`apps/web-antd`。其它 UI 变体不进 `ci-*` / `v*` 发版。
 2. **禁止注册 demos / 上游 vben 演示路由**到生产菜单（见 `src/router/routes/index.ts`）。
 3. **品牌**：文案统一「松果排课」；`VITE_APP_NAMESPACE=songguo-admin`。
 

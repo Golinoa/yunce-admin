@@ -18,7 +18,7 @@ if (PLACEHOLDERS.has(key)) {
     '[assert-store-secure-key] FAIL: VITE_APP_STORE_SECURE_KEY 为空或仍是仓库占位值。',
   );
   console.error(
-    '  发版：配置 GitHub Secret VITE_APP_STORE_SECURE_KEY 后打 dashboard-v*。',
+    '  发版：配置 GitHub Secret VITE_APP_STORE_SECURE_KEY 后打 vX.Y.Z。',
   );
   console.error(
     '  本地镜像：export VITE_APP_STORE_SECURE_KEY=<非占位≥16字符> 后再跑 build-local-docker-image.sh',

@@ -15,10 +15,10 @@
    大改 / 发版前：pnpm run verify:sop
 
 3. 云端只验门禁、不部署
-   git tag dashboard-ci-YYYYMMDDHHMM && git push <remote> dashboard-ci-*
+   git tag ci-YYYYMMDDHHMM && git push github ci-*
 
 4. 正式发版
-   dashboard-v* → quality → 镜像 → SSH 部署 → /health
+   vX.Y.Z → quality → 镜像 → SSH 部署 → /health
 
 5. 发版后冒烟
    verify:sop:post（health + headers）
@@ -27,8 +27,8 @@
 | 标签 | 流水线 | 部署 |
 |------|--------|------|
 | 普通 push `main` | 不跑 Actions（可后续加 PR 门禁） | 否 |
-| `dashboard-ci-*` | 仅质量 | **否** |
-| `dashboard-v*` | Release | **是** |
+| `ci-*`（兼容 `dashboard-ci-*`） | 仅质量 | **否** |
+| `vX.Y.Z`（兼容 `dashboard-v*`） | Release | **是** |
 
 ## 现状差距（相对后端）
 
@@ -52,7 +52,7 @@
 | [PHASE-1-DONE.md](./PHASE-1-DONE.md) | Phase 1 完成清单 |
 | [PHASE-2-DONE.md](./PHASE-2-DONE.md) | Phase 2 完成清单 |
 | [PRE-PUSH-CHECKS.md](./PRE-PUSH-CHECKS.md) | 推送前按范围检查 |
-| [RELEASE-TEST-SOP.md](./RELEASE-TEST-SOP.md) | `dashboard-ci-*` / `dashboard-v*` |
+| [RELEASE-TEST-SOP.md](./RELEASE-TEST-SOP.md) | `ci-*` / `vX.Y.Z`（兼容旧 dashboard-*） |
 | [OPS-BLOCKERS-CLOSED.md](./OPS-BLOCKERS-CLOSED.md) | 2026-09-01 运营阻塞画布收口 |
 | AGENTS.md（web-antd 根） | 产品硬性约定 |
 | [../adr/](../adr/) | ADR-0001 ~ 0004 |

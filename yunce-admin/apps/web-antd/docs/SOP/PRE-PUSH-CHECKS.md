@@ -23,5 +23,5 @@
 
 ## 标签提醒
 
-- 只验门禁：`dashboard-ci-*`
-- 正式发版：`dashboard-v*`（见 RELEASE-TEST-SOP.md）
+- 只验门禁：`ci-*`（兼容 `dashboard-ci-*`）
+- 正式发版：`vX.Y.Z`（兼容 `dashboard-v*`；见 RELEASE-TEST-SOP.md）

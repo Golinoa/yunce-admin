@@ -11,7 +11,7 @@
 ## Decision
 
 1. **产品主端唯一**：`apps/web-antd`（延续 ADR-0001）。
-2. **门禁 / CI / Docker** 只构建 web-antd；禁止把其它 UI app 加回 `dashboard-ci-*` / `dashboard-v*`。
+2. **门禁 / CI / Docker** 只构建 web-antd；禁止把其它 UI app 加回 `ci-*` / `v*`。
 3. **变体源码暂留**仓库，标注为上游骨架，不作为产品需求入口。
 4. **物理移除**另开 ADR + 独立 PR（需验证 turbo/pnpm workspace 无残留引用）。
 

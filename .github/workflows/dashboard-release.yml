@@ -189,6 +189,8 @@ jobs:
           exit 1
 
       - name: verify:sop:post（health + headers）
+        # deploy job 未装 pnpm；这两个脚本是纯 node，直接跑避免 command not found
         working-directory: yunce-admin
-        run: pnpm run verify:sop:post
-        continue-on-error: false
+        run: |
+          node ./scripts/check-health.mjs
+          node ./scripts/check-headers.mjs

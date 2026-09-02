@@ -60,6 +60,6 @@ Docker 构建期会跑 `scripts/assert-store-secure-key.mjs`；占位/空密钥�
 4. `test:ci:antd`（业务 Vitest）
 5. `build:antd`
 6. `check:compat`
-7. `audit:ci`
+7. `audit:ci`（强制 `registry.npmjs.org`；只拦 web-antd 运行时 high/critical；与 CI 同失败）
 
 日常推送可用更快的 `pnpm run verify:sop:fast`（不含 build/audit）。

@@ -27,3 +27,4 @@
 ## 发版注意
 
 下次 `v*` 发版前请配置 GitHub Secret：`VITE_APP_STORE_SECURE_KEY`（仓库内仅为占位）。
+`audit:ci` 强制走 `registry.npmjs.org`（忽略 `.npmrc` 镜像）；本地与 CI 同失败策略。

@@ -25,9 +25,21 @@ git push <remote> dashboard-ci-YYYYMMDDHHMM
 ## 正式发版
 
 1. 确认 CI 绿或本地 `verify:sop` 绿
-2. 确认 GitHub Secret 已配置 `VITE_APP_STORE_SECURE_KEY`
+2. 确认 GitHub Secret 已配置 `VITE_APP_STORE_SECURE_KEY`（**非** `please-replace-me-with-your-own-key`，长度 ≥16）
+   - 路径：仓库 Settings → Secrets and variables → Actions → New repository secret
+   - 名称必须精确为 `VITE_APP_STORE_SECURE_KEY`
+   - 未配置或占位值时，`dashboard-v*` 流水线会在「校验 store 加密密钥」步骤失败
 3. `git tag dashboard-vX.Y.Z && git push <remote> dashboard-vX.Y.Z`
 4. 发版后：`pnpm run verify:sop:post`
+
+本地试打镜像同样强制密钥：
+
+```bash
+export VITE_APP_STORE_SECURE_KEY='your-real-key-at-least-16'
+./scripts/deploy/build-local-docker-image.sh local
+```
+
+Docker 构建期会跑 `scripts/assert-store-secure-key.mjs`；占位/空密钥直接失败。
 
 ## 门禁内容（verify:sop）
 

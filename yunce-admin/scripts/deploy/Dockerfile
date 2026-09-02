@@ -8,8 +8,8 @@ FROM node:24.20.0-slim AS builder
 ARG DASHBOARD_VERSION=1.0.4
 ENV VITE_DASHBOARD_VERSION=$DASHBOARD_VERSION
 
-# 生产 store 加密密钥：必须由 CI Secret / 本地 --build-arg 注入，禁止使用仓库占位值
-ARG VITE_APP_STORE_SECURE_KEY=please-replace-me-with-your-own-key
+# 生产 store 加密密钥：必须由 CI Secret / 本地 --build-arg 注入，禁止缺省占位
+ARG VITE_APP_STORE_SECURE_KEY
 ENV VITE_APP_STORE_SECURE_KEY=$VITE_APP_STORE_SECURE_KEY
 
 ENV PNPM_HOME="/pnpm"
@@ -27,6 +27,9 @@ COPY internal ./internal
 COPY packages ./packages
 COPY scripts ./scripts
 COPY apps/web-antd ./apps/web-antd
+
+# 构建期硬闸：占位/空密钥直接失败，避免打出「能构建但生产白屏」的镜像
+RUN node scripts/assert-store-secure-key.mjs
 
 RUN --mount=type=cache,id=yunce-admin-pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile

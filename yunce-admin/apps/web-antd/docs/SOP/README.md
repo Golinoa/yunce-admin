@@ -53,5 +53,6 @@
 | [PHASE-2-DONE.md](./PHASE-2-DONE.md) | Phase 2 完成清单 |
 | [PRE-PUSH-CHECKS.md](./PRE-PUSH-CHECKS.md) | 推送前按范围检查 |
 | [RELEASE-TEST-SOP.md](./RELEASE-TEST-SOP.md) | `dashboard-ci-*` / `dashboard-v*` |
+| [OPS-BLOCKERS-CLOSED.md](./OPS-BLOCKERS-CLOSED.md) | 2026-09-01 运营阻塞画布收口 |
 | AGENTS.md（web-antd 根） | 产品硬性约定 |
 | [../adr/](../adr/) | ADR-0001 ~ 0004 |

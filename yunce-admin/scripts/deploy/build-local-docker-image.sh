@@ -1,8 +1,9 @@
 #!/bin/bash
 # ============================================
 # 本地构建 yunce-dashboard Docker 镜像
-# 用法：./scripts/deploy/build-local-docker-image.sh [tag]
-# 示例：./scripts/deploy/build-local-docker-image.sh latest
+# 用法：
+#   export VITE_APP_STORE_SECURE_KEY='your-real-key-at-least-16'
+#   ./scripts/deploy/build-local-docker-image.sh [tag]
 # ============================================
 
 set -euo pipefail
@@ -14,9 +15,18 @@ TAG="${1:-local}"
 
 cd "${ROOT_DIR}"
 
+if [[ -z "${VITE_APP_STORE_SECURE_KEY:-}" ]]; then
+  echo "ERROR: 请先设置环境变量 VITE_APP_STORE_SECURE_KEY（非占位，≥16 字符）"
+  echo "  export VITE_APP_STORE_SECURE_KEY='...'"
+  exit 1
+fi
+
+node "${ROOT_DIR}/scripts/assert-store-secure-key.mjs"
+
 echo "==> 构建 ${IMAGE_NAME}:${TAG}"
 docker build \
   -f scripts/deploy/Dockerfile \
+  --build-arg "VITE_APP_STORE_SECURE_KEY=${VITE_APP_STORE_SECURE_KEY}" \
   -t "${IMAGE_NAME}:${TAG}" \
   .
 

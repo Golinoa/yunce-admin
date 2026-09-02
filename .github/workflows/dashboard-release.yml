@@ -85,10 +85,20 @@ jobs:
 
       - name: 校验 store 加密密钥 Secret
         run: |
-          if [ -z "${{ secrets.VITE_APP_STORE_SECURE_KEY }}" ]; then
-            echo "::error::请配置 Secrets.VITE_APP_STORE_SECURE_KEY（生产 store AES 密钥，禁止占位值）"
+          KEY='${{ secrets.VITE_APP_STORE_SECURE_KEY }}'
+          if [ -z "${KEY}" ]; then
+            echo "::error::请配置 Secrets.VITE_APP_STORE_SECURE_KEY（生产 store AES 密钥）"
             exit 1
           fi
+          if [ "${KEY}" = "please-replace-me-with-your-own-key" ]; then
+            echo "::error::VITE_APP_STORE_SECURE_KEY 仍是仓库占位值，禁止发版"
+            exit 1
+          fi
+          if [ "${#KEY}" -lt 16 ]; then
+            echo "::error::VITE_APP_STORE_SECURE_KEY 长度不足 16，禁止发版"
+            exit 1
+          fi
+          echo "store secure key Secret: OK (len=${#KEY})"
 
       - name: 构建 + 推送镜像
         uses: docker/build-push-action@v5

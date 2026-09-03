@@ -42,6 +42,7 @@ const editForm = reactive({
   maxEmployees: 0,
   maxCampuses: 1,
   price: 0,
+  virtualProductId: '',
   durationDays: 365,
   status: 'active',
   sort: 0,
@@ -55,6 +56,7 @@ const createForm = reactive({
   maxEmployees: 2,
   maxCampuses: 1,
   price: 0,
+  virtualProductId: '',
   durationDays: 365,
   status: 'active',
   sort: 10,
@@ -159,6 +161,7 @@ function openEdit(record: OrganizationVersionItem) {
   editForm.maxEmployees = record.maxEmployees;
   editForm.maxCampuses = record.maxCampuses;
   editForm.price = record.price;
+  editForm.virtualProductId = record.virtualProductId ?? '';
   editForm.durationDays = record.durationDays;
   editForm.status = record.status || 'active';
   editForm.sort = record.sort;
@@ -173,6 +176,7 @@ function openCreate() {
   createForm.maxEmployees = 2;
   createForm.maxCampuses = 1;
   createForm.price = 0;
+  createForm.virtualProductId = '';
   createForm.durationDays = 365;
   createForm.status = 'active';
   createForm.sort = (records.value.at(-1)?.sort ?? 0) + 1;
@@ -201,6 +205,7 @@ async function submitEdit() {
       price: editForm.price,
       sort: editForm.sort,
       status: editForm.status,
+      virtualProductId: editForm.virtualProductId.trim() || null,
     });
     message.success(`套餐「${editForm.name}」已更新`);
     editOpen.value = false;
@@ -233,6 +238,7 @@ async function submitCreate() {
       price: createForm.price,
       sort: createForm.sort,
       status: createForm.status,
+      virtualProductId: createForm.virtualProductId.trim() || null,
     });
     message.success(`套餐「${createForm.name}」已创建`);
     createOpen.value = false;
@@ -283,8 +289,8 @@ onMounted(fetchAll);
       >
         配置机构 SaaS 档位的用量配额，并在下方矩阵中按「档位 ×
         功能模块」开关授权。保存后即时影响
-        <code>assertFeature</code> / 小程序
-        entitlements。个人会员套餐请到「会员管理」。
+        <code>assertFeature</code> / 小程序 entitlements。在线购买需填写「虚拟支付道具
+        ID」且售价（分）与 MP 道具价一致；留空则仅支持激活码。个人会员卡请到「会员管理」。
       </div>
 
       <div class="mb-3 flex justify-end">
@@ -300,7 +306,8 @@ onMounted(fetchAll);
           { title: '员工上限', dataIndex: 'maxEmployees', width: 100 },
           { title: '校区上限', dataIndex: 'maxCampuses', width: 100 },
           { title: '已开功能', dataIndex: 'features', width: 100 },
-          { title: '价格(元/年)', dataIndex: 'price', width: 110 },
+          { title: '售价(分)', dataIndex: 'price', width: 100 },
+          { title: '道具ID', dataIndex: 'virtualProductId', width: 120, ellipsis: true },
           { title: '时长(天)', dataIndex: 'durationDays', width: 90 },
           { title: '状态', dataIndex: 'status', width: 80 },
           { title: '更新时间', dataIndex: 'updatedAt', width: 120 },
@@ -326,6 +333,18 @@ onMounted(fetchAll);
           <template v-else-if="column.dataIndex === 'features'">
             {{ enabledFeatureCount(record.features) }} /
             {{ activeModules.length || '-' }}
+          </template>
+          <template v-else-if="column.dataIndex === 'price'">
+            {{ record.price }}
+            <span
+              v-if="record.price > 0"
+              class="text-xs text-[var(--ant-color-text-secondary)]"
+            >
+              (¥{{ (record.price / 100).toFixed(2) }})
+            </span>
+          </template>
+          <template v-else-if="column.dataIndex === 'virtualProductId'">
+            {{ record.virtualProductId || '—' }}
           </template>
           <template v-else-if="column.dataIndex === 'status'">
             <a-tag :color="statusColor(record.status)">
@@ -443,16 +462,20 @@ onMounted(fetchAll);
             </a-form-item>
           </a-col>
         </a-row>
-        <a-divider orientation="left" plain>售卖信息</a-divider>
+        <a-divider orientation="left" plain>售卖 / 虚拟支付</a-divider>
         <a-row :gutter="16">
           <a-col :span="8">
-            <a-form-item label="价格（元/年）">
+            <a-form-item label="售价（分）">
               <a-input-number
                 v-model:value="editForm.price"
                 :min="0"
                 :precision="0"
                 style="width: 100%"
+                placeholder="与 MP 道具价一致"
               />
+              <div class="mt-1 text-xs text-[var(--ant-color-text-secondary)]">
+                约 ¥{{ (editForm.price / 100).toFixed(2) }}；须与微信道具价格一致
+              </div>
             </a-form-item>
           </a-col>
           <a-col :span="8">
@@ -475,6 +498,13 @@ onMounted(fetchAll);
             </a-form-item>
           </a-col>
         </a-row>
+        <a-form-item label="虚拟支付道具 ID">
+          <a-input
+            v-model:value="editForm.virtualProductId"
+            :maxlength="128"
+            placeholder="MP 道具管理中的 productId；留空则不可在线购买"
+          />
+        </a-form-item>
         <a-form-item label="排序">
           <a-input-number
             v-model:value="editForm.sort"
@@ -548,12 +578,13 @@ onMounted(fetchAll);
         </a-row>
         <a-row :gutter="16">
           <a-col :span="8">
-            <a-form-item label="价格（元/年）">
+            <a-form-item label="售价（分）">
               <a-input-number
                 v-model:value="createForm.price"
                 :min="0"
                 :precision="0"
                 style="width: 100%"
+                placeholder="与 MP 道具价一致"
               />
             </a-form-item>
           </a-col>
@@ -577,6 +608,13 @@ onMounted(fetchAll);
             </a-form-item>
           </a-col>
         </a-row>
+        <a-form-item label="虚拟支付道具 ID">
+          <a-input
+            v-model:value="createForm.virtualProductId"
+            :maxlength="128"
+            placeholder="留空则不可在线购买"
+          />
+        </a-form-item>
       </a-form>
     </a-modal>
   </div>

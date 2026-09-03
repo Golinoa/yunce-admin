@@ -158,10 +158,13 @@ export interface OrganizationVersionItem {
   maxEmployees: number;
   maxMembers: number;
   name: string;
+  /** 售价（分）；须与微信虚拟支付道具价一致 */
   price: number;
   sort: number;
   status: string;
   updatedAt: string;
+  /** 微信虚拟支付道具 ID；空则不可在线购买 */
+  virtualProductId?: null | string;
 }
 
 /** 机构版本调整入参（R7） */
@@ -241,6 +244,7 @@ export function createOrganizationVersionApi(data: {
   price?: number;
   sort?: number;
   status?: string;
+  virtualProductId?: null | string;
 }) {
   return requestClient.post<OrganizationVersionItem>(
     '/organization-versions',
@@ -261,6 +265,7 @@ export function updateOrganizationVersionApi(
     price: number;
     sort: number;
     status: string;
+    virtualProductId: null | string;
   }>,
 ) {
   return requestClient.put<OrganizationVersionItem>(

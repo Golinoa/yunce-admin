@@ -169,6 +169,7 @@ onMounted(fetchUsers);
 </script>
 
 <template>
+  <div class="h-full">
   <OperationTablePage title="用户管理" :loading="loading">
     <template #filters>
       <a-form layout="inline">
@@ -361,4 +362,5 @@ onMounted(fetchUsers);
       </a-form-item>
     </a-form>
   </a-modal>
+  </div>
 </template>

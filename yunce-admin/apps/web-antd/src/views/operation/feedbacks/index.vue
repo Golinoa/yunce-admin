@@ -186,6 +186,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <div class="h-full">
   <OperationTablePage title="使用反馈" :loading="loading">
     <template #filters>
       <a-form layout="inline">
@@ -372,4 +373,5 @@ onMounted(() => {
       </template>
     </a-spin>
   </a-drawer>
+  </div>
 </template>

@@ -420,6 +420,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <div class="h-full">
   <OperationTablePage title="机构管理" :loading="loading">
     <template #filters>
       <a-form layout="inline">
@@ -869,4 +870,5 @@ onMounted(async () => {
         </a-form-item>
       </a-form>
     </a-modal>
+  </div>
 </template>

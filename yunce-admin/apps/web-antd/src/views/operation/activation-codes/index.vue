@@ -139,10 +139,11 @@ async function fetchCodes() {
         page: pagination.page,
         pageSize: pagination.pageSize,
       }),
+      // 后端 activationCodeListQuerySchema：pageSize max=100
       getActivationCodesApi({
         ...listParams,
         page: 1,
-        pageSize: 200,
+        pageSize: 100,
       }),
       getMembershipPlansApi(),
     ]);
@@ -223,6 +224,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <div class="h-full">
   <OperationTablePage title="激活码管理" :loading="loading">
     <template #summary>
       <a-space wrap>
@@ -421,4 +423,5 @@ onMounted(() => {
       </a-form-item>
     </a-form>
   </a-modal>
+  </div>
 </template>

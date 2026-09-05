@@ -22,6 +22,11 @@ export const overridesPreferences = defineOverridesPreferences({
     enableRefreshToken: true,
     name: import.meta.env.VITE_APP_TITLE,
   },
+  // Transition mode=out-in + 多根/注释根节点会导致菜单切换白屏（F5 才恢复）。
+  // 产品默认关闭路由过渡，保证切换稳定；用户仍可在偏好设置里打开。
+  transition: {
+    enable: false,
+  },
 });
 
 export const preferencesExtension =

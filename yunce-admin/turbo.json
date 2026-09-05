@@ -11,10 +11,23 @@
     "scripts/*/src/**/*.ts",
     "scripts/*/src/**/*.json"
   ],
-  "globalEnv": ["NODE_ENV"],
+  "globalEnv": [
+    "NODE_ENV",
+    "CI",
+    "VITE_APP_STORE_SECURE_KEY",
+    "VITE_DASHBOARD_VERSION",
+    "VITE_APP_TITLE",
+    "VITE_APP_NAMESPACE"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "VITE_APP_STORE_SECURE_KEY",
+        "VITE_DASHBOARD_VERSION",
+        "VITE_APP_TITLE",
+        "VITE_APP_NAMESPACE"
+      ],
       "outputs": [
         "dist/**",
         "dist.zip",

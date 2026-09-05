@@ -29,12 +29,14 @@ COPY scripts ./scripts
 COPY apps/web-antd ./apps/web-antd
 
 # 构建期硬闸：占位/空密钥直接失败，避免打出「能构建但生产白屏」的镜像
-RUN node scripts/assert-store-secure-key.mjs
+RUN node scripts/assert-store-secure-key.mjs \
+  && node scripts/inject-env-production.mjs
 
 RUN --mount=type=cache,id=yunce-admin-pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
-RUN pnpm run build:antd
+RUN pnpm run build:antd \
+  && node scripts/assert-dist-store-key.mjs
 
 # ============================================
 FROM nginx:1.25-alpine AS production

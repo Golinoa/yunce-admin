@@ -29,4 +29,8 @@ async function initApplication() {
   unmountGlobalLoading();
 }
 
-initApplication();
+initApplication().catch((error) => {
+  // 启动失败时卸下全屏 loading，避免一直转圈且看不到原因
+  console.error('[app] bootstrap failed', error);
+  unmountGlobalLoading();
+});

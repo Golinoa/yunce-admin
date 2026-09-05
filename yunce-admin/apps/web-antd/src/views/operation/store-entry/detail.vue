@@ -237,6 +237,9 @@ onMounted(fetchDetail);
             <a-descriptions-item label="联系电话">
               {{ detail.contactPhone || '-' }}
             </a-descriptions-item>
+            <a-descriptions-item label="营业时间" :span="2">
+              {{ detail.businessHours || '-' }}
+            </a-descriptions-item>
           </a-descriptions>
         </a-card>
 

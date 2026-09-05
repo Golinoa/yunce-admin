@@ -353,6 +353,7 @@ export function debugOpsNotifySimulateApi(data: {
 export type SesEmailPurpose =
   | 'bind'
   | 'expiryReminder'
+  | 'login'
   | 'openReminder'
   | 'register'
   | 'reset';

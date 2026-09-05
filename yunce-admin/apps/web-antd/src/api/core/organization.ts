@@ -67,6 +67,8 @@ export interface StoreEntryApplicationItem {
   applicantUserId: string;
   contactName: string;
   contactPhone: string;
+  /** 营业时间，如 09:00:00至21:00:00 */
+  businessHours?: null | string;
   createdAt: string;
   id: string;
   latitude?: null | number;

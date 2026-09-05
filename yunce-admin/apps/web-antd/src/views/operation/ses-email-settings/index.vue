@@ -25,8 +25,13 @@ const PURPOSE_META: Array<{
 }> = [
   {
     key: 'register',
-    label: '注册 / 登录验证码',
-    hint: '对应小程序登录、注册发码（purpose=LOGIN）',
+    label: '注册验证码',
+    hint: '对应小程序注册发码（purpose=REGISTER）',
+  },
+  {
+    key: 'login',
+    label: '登录验证码',
+    hint: '对应邮箱验证码登录发码（purpose=LOGIN；常规密码登录不发此信）',
   },
   {
     key: 'reset',
@@ -62,6 +67,7 @@ const form = reactive({
   testPurpose: 'register' as SesEmailPurpose,
   templates: {
     register: { templateId: '', subject: '', codeKey: '' },
+    login: { templateId: '', subject: '', codeKey: '' },
     reset: { templateId: '', subject: '', codeKey: '' },
     bind: { templateId: '', subject: '', codeKey: '' },
     openReminder: { templateId: '', subject: '', codeKey: '' },

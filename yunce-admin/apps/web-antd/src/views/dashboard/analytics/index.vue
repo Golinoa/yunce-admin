@@ -121,6 +121,22 @@ const orgExpireAlerts = computed(
   () => overview.value?.orgExpireAlerts ?? null,
 );
 const retention = computed(() => overview.value?.retention ?? null);
+const engagement = computed(() => overview.value?.engagement ?? null);
+const funnel = computed(() => overview.value?.funnel ?? []);
+const trialToPaid = computed(() => overview.value?.trialToPaid ?? []);
+const paidOrgRate = computed(() => overview.value?.paidOrgRate ?? null);
+const channelPay = computed(() => overview.value?.channelPay ?? []);
+
+function formatRateOrSparse(
+  rate: number,
+  cohortSize?: number,
+  minSample = 3,
+): string {
+  if (typeof cohortSize === 'number' && cohortSize < minSample) {
+    return '样本不足';
+  }
+  return formatPercent(rate);
+}
 
 const trendRows = computed<TrendRow[]>(() => {
   const series = overview.value?.series ?? [];
@@ -183,7 +199,7 @@ const overviewCards = computed<OverviewCardItem[]>(() => {
       color: '#13c2c2',
       key: 'opened-users',
       label: '开通用户',
-      tip: `用户开通率 ${formatPercent(membershipRate.value)}`,
+      tip: `付费/会员开通占比 ${formatPercent(membershipRate.value)}`,
       value: formatNumber(current.totalMembers),
     },
     {
@@ -208,37 +224,52 @@ const summaryMetrics = computed<SummaryMetricItem[]>(() => {
   const currentRetention = retention.value;
   const currentFeedback = feedbackAlerts.value;
   const currentMembershipAlerts = membershipAlerts.value;
+  const currentEngagement = engagement.value;
 
   return [
     {
-      key: 'invite-rate',
-      label: '邀请渗透率',
-      value: formatPercent(inviteRate.value),
+      key: 'dau',
+      label: '今日日活',
+      value: formatNumber(currentEngagement?.dau ?? 0),
+    },
+    {
+      key: 'online-rate',
+      label: '在线率',
+      value: formatPercent(currentEngagement?.onlineRate ?? 0),
     },
     {
       key: 'day1-retention',
-      label: '次日留存',
-      value: formatPercent(currentRetention?.day1 ?? 0),
+      label: 'D1 留存',
+      value: formatRateOrSparse(
+        currentRetention?.day1 ?? 0,
+        currentRetention?.day1Meta?.cohortSize,
+      ),
+    },
+    {
+      key: 'day3-retention',
+      label: 'D3 留存',
+      value: formatRateOrSparse(
+        currentRetention?.day3 ?? 0,
+        currentRetention?.day3Meta?.cohortSize,
+      ),
     },
     {
       key: 'day7-retention',
-      label: '7 日留存',
-      value: formatPercent(currentRetention?.day7 ?? 0),
+      label: 'D7 留存',
+      value: formatRateOrSparse(
+        currentRetention?.day7 ?? 0,
+        currentRetention?.day7Meta?.cohortSize,
+      ),
     },
     {
-      key: 'invite-rules',
-      label: '启用规则',
-      value: formatNumber(current?.activeInviteRules ?? 0),
+      key: 'wau',
+      label: '近7日活跃',
+      value: formatNumber(currentEngagement?.wau ?? 0),
     },
     {
-      key: 'invite-total',
-      label: '邀请关系',
-      value: formatNumber(current?.totalInvites ?? 0),
-    },
-    {
-      key: 'teacher-total',
-      label: '机构教师',
-      value: formatNumber(current?.totalTeachers ?? 0),
+      key: 'paid-org-rate',
+      label: '机构付费率',
+      value: formatPercent(paidOrgRate.value?.rate ?? 0),
     },
     {
       key: 'expiring-memberships',
@@ -250,6 +281,11 @@ const summaryMetrics = computed<SummaryMetricItem[]>(() => {
       label: '待处理反馈',
       value: formatNumber(currentFeedback?.pendingCount ?? 0),
     },
+    {
+      key: 'invite-total',
+      label: '邀请关系',
+      value: formatNumber(current?.totalInvites ?? 0),
+    },
   ];
 });
 
@@ -259,9 +295,9 @@ const healthMetrics = computed<HealthMetric[]>(() => {
   return [
     {
       key: 'membership',
-      label: '用户开通率',
+      label: '付费/会员开通占比',
       status: resolveHealthStatus(membershipRate.value),
-      tip: '开通用户 / 累计用户',
+      tip: '开通用户 / 累计校长',
       value: membershipRate.value,
     },
     {
@@ -272,24 +308,31 @@ const healthMetrics = computed<HealthMetric[]>(() => {
       value: activationUsageRate.value,
     },
     {
-      key: 'invite',
-      label: '邀请渗透率',
-      status: resolveHealthStatus(inviteRate.value),
-      tip: '邀请关系 / 累计用户',
-      value: inviteRate.value,
+      key: 'paid-org',
+      label: '机构付费率',
+      status: resolveHealthStatus(paidOrgRate.value?.rate ?? 0),
+      tip: '付费档机构 / 活跃机构',
+      value: paidOrgRate.value?.rate ?? 0,
     },
     {
       key: 'day1',
-      label: '次日留存',
+      label: 'D1 留存',
       status: resolveHealthStatus(currentRetention?.day1 ?? 0),
-      tip: '当前保留基础留存指标',
+      tip: '按登录会话：昨日注册校长今日活跃占比',
       value: currentRetention?.day1 ?? 0,
     },
     {
+      key: 'day3',
+      label: 'D3 留存',
+      status: resolveHealthStatus(currentRetention?.day3 ?? 0),
+      tip: '按登录会话：注册日+3 当天活跃占比',
+      value: currentRetention?.day3 ?? 0,
+    },
+    {
       key: 'day7',
-      label: '7 日留存',
+      label: 'D7 留存',
       status: resolveHealthStatus(currentRetention?.day7 ?? 0),
-      tip: '当前为基础观察口径',
+      tip: '按登录会话：注册日+7 当天活跃占比',
       value: currentRetention?.day7 ?? 0,
     },
   ];
@@ -322,9 +365,21 @@ const insightList = computed<InsightItem[]>(() => {
     },
     {
       key: 'retention',
-      title: '留存观察',
-      value: formatPercent(currentRetention?.day1 ?? 0),
-      description: `7 日留存 ${formatPercent(currentRetention?.day7 ?? 0)}`,
+      title: '留存观察（会话）',
+      value: formatRateOrSparse(
+        currentRetention?.day1 ?? 0,
+        currentRetention?.day1Meta?.cohortSize,
+      ),
+      description: `D3 ${formatRateOrSparse(currentRetention?.day3 ?? 0, currentRetention?.day3Meta?.cohortSize)} / D7 ${formatRateOrSparse(currentRetention?.day7 ?? 0, currentRetention?.day7Meta?.cohortSize)}`,
+    },
+    {
+      key: 'trial-pay',
+      title: '试用→付费（30日窗）',
+      value: formatRateOrSparse(
+        trialToPaid.value.find((w) => w.windowDays === 30)?.rate ?? 0,
+        trialToPaid.value.find((w) => w.windowDays === 30)?.cohortSize,
+      ),
+      description: `7日 ${formatRateOrSparse(trialToPaid.value.find((w) => w.windowDays === 7)?.rate ?? 0, trialToPaid.value.find((w) => w.windowDays === 7)?.cohortSize)} / 14日 ${formatRateOrSparse(trialToPaid.value.find((w) => w.windowDays === 14)?.rate ?? 0, trialToPaid.value.find((w) => w.windowDays === 14)?.cohortSize)}`,
     },
     {
       key: 'expiring-membership',
@@ -349,7 +404,7 @@ const alertList = computed<AlertItem[]>(() => {
       key: 'membership-rate',
       level: 'high',
       metric: formatPercent(membershipRate.value),
-      title: '用户开通率偏低，需要关注开通转化链路',
+      title: '付费/会员开通占比偏低，需要关注开通转化链路',
     });
   }
 
@@ -373,14 +428,32 @@ const alertList = computed<AlertItem[]>(() => {
     });
   }
 
-  if ((retention.value?.day1 ?? 0) < 40) {
+  const day1Cohort = retention.value?.day1Meta?.cohortSize ?? 0;
+  if (day1Cohort >= 3 && (retention.value?.day1 ?? 0) < 40) {
     result.push({
-      action: '重点检查新用户首日体验和首次开通后的关键动作',
+      action: '重点检查新用户首日体验与次日回访路径',
       key: 'retention-rate',
       level: 'high',
       metric: formatPercent(retention.value?.day1 ?? 0),
-      title: '次日留存偏低，需关注新用户首日活跃路径',
+      title: 'D1 留存偏低，需关注新用户首日活跃路径',
     });
+  }
+
+  const funnelSteps = funnel.value;
+  for (let i = 1; i < funnelSteps.length; i += 1) {
+    const step = funnelSteps[i];
+    const prev = funnelSteps[i - 1];
+    if (!step || !prev || prev.count < 3) continue;
+    if ((step.conversionFromPrev ?? 100) < 35) {
+      result.push({
+        action: `排查「${prev.label} → ${step.label}」流失原因并补运营动作`,
+        key: `funnel-drop-${step.key}`,
+        level: 'high',
+        metric: formatPercent(step.conversionFromPrev ?? 0),
+        title: `漏斗「${step.label}」相对上一步转化偏低`,
+      });
+      break;
+    }
   }
 
   if ((membershipAlerts.value?.expiringIn7Days ?? 0) > 0) {
@@ -556,11 +629,10 @@ async function renderCharts() {
   const dates = trendRows.value.map((item) => item.date);
   const rows = trendRows.value;
   const current = cards.value;
-  const currentRetention = retention.value;
 
   await Promise.all([
     renderTrendChart({
-      color: ['#1677ff', '#13c2c2', '#722ed1', '#fa8c16'],
+      color: ['#1677ff', '#52c41a', '#13c2c2', '#722ed1', '#fa8c16'],
       grid: {
         bottom: 8,
         containLabel: true,
@@ -583,6 +655,17 @@ async function renderCharts() {
           type: 'line',
         },
         {
+          areaStyle: {
+            opacity: 0.1,
+          },
+          data: rows.map((item) => item.activeUsers ?? 0),
+          name: '日活校长',
+          smooth: true,
+          symbol: 'circle',
+          symbolSize: 6,
+          type: 'line',
+        },
+        {
           data: rows.map((item) => item.members),
           name: '开通用户',
           smooth: true,
@@ -599,9 +682,6 @@ async function renderCharts() {
           type: 'line',
         },
         {
-          areaStyle: {
-            opacity: 0.08,
-          },
           data: rows.map((item) => item.invites),
           name: '邀请关系',
           smooth: true,
@@ -632,28 +712,43 @@ async function renderCharts() {
       },
     }),
     renderConversionChart({
-      color: ['#1677ff', '#13c2c2', '#722ed1', '#faad14', '#ff4d4f'],
+      color: ['#1677ff'],
       grid: {
         bottom: 8,
         containLabel: true,
         left: 12,
-        right: 16,
+        right: 48,
         top: 12,
       },
       series: [
         {
-          data: [
-            membershipRate.value,
-            activationUsageRate.value,
-            inviteRate.value,
-            currentRetention?.day1 ?? 0,
-            currentRetention?.day7 ?? 0,
-          ],
+          data: (funnel.value.length
+            ? funnel.value
+            : [
+                { label: '注册校长', count: 0, conversionFromPrev: null },
+                { label: '入驻通过', count: 0, conversionFromPrev: null },
+                { label: '试用中', count: 0, conversionFromPrev: null },
+                { label: '付费档', count: 0, conversionFromPrev: null },
+                { label: '近30日履约', count: 0, conversionFromPrev: null },
+              ]
+          )
+            .map((step) => step.count)
+            .toReversed(),
           itemStyle: {
             borderRadius: [0, 6, 6, 0],
           },
           label: {
-            formatter: '{c}%',
+            // ECharts CallbackDataParams 与本地窄化类型不兼容，运行时字段齐全
+            formatter: ((params: {
+              dataIndex?: number;
+              value?: unknown;
+            }) => {
+              const steps = [...funnel.value].toReversed();
+              const step = steps[params.dataIndex ?? -1];
+              const value = Number(params.value ?? 0);
+              if (!step || step.conversionFromPrev == null) return `${value}`;
+              return `${value}（${step.conversionFromPrev}%）`;
+            }) as (params: unknown) => string,
             position: 'right',
             show: true,
           },
@@ -661,11 +756,23 @@ async function renderCharts() {
         },
       ],
       tooltip: {
-        formatter: '{b}: {c}%',
+        formatter: ((params: unknown) => {
+          const list = Array.isArray(params) ? params : [params];
+          const item = list[0] as
+            | undefined
+            | { dataIndex?: number; name?: string; value?: unknown };
+          if (!item) return '';
+          const steps = [...funnel.value].toReversed();
+          const step = steps[item.dataIndex ?? -1];
+          const conv =
+            step?.conversionFromPrev == null
+              ? '—'
+              : `${step.conversionFromPrev}%`;
+          return `${item.name ?? ''}<br/>人数：${item.value ?? 0}<br/>相对上一步：${conv}`;
+        }) as (params: unknown) => string,
         trigger: 'axis',
       },
       xAxis: {
-        max: 100,
         splitLine: {
           lineStyle: {
             color: '#f0f0f0',
@@ -678,13 +785,10 @@ async function renderCharts() {
         axisTick: {
           show: false,
         },
-        data: [
-          '用户开通率',
-          '激活码使用率',
-          '邀请渗透率',
-          '次日留存',
-          '7 日留存',
-        ],
+        data: (funnel.value.length
+          ? funnel.value.map((s) => s.label)
+          : ['注册校长', '入驻通过', '试用中', '付费档', '近30日履约']
+        ).toReversed(),
         type: 'category',
       },
     }),
@@ -776,12 +880,12 @@ onMounted(async () => {
           <div class="max-w-[760px]">
             <div class="hero-title">运营看板</div>
             <div class="hero-subtitle">
-              按用户口径观察校长客户的开通、拉新、激活码和机构基础规模，用更符合
-              B 端后台的方式呈现经营状态。
+              按校长会话活跃观察 DAU/留存，并跟踪机构 SaaS
+              入驻→试用→付费→履约漏斗，支撑运营决策。
             </div>
             <div class="hero-meta">
               <span>统计窗口：近 {{ windowDays }} 天</span>
-              <span>用户口径：校长客户</span>
+              <span>活跃口径：AuthSession（上海日）</span>
               <span>最近刷新：{{ updatedAt || '-' }}</span>
             </div>
           </div>
@@ -1061,7 +1165,7 @@ onMounted(async () => {
             <template #title>核心趋势</template>
             <template #extra>
               <span class="chart-card__extra">
-                新增用户、开通、激活码使用与邀请关系按日趋势
+                日活校长、新增、开通、激活码与邀请按日趋势
               </span>
             </template>
             <EchartsUI ref="trendChartRef" height="360px" />
@@ -1069,11 +1173,80 @@ onMounted(async () => {
         </a-col>
         <a-col :xs="24" :xl="8">
           <a-card :bordered="false" class="chart-card" :loading="loading">
-            <template #title>关键转化</template>
+            <template #title>机构转化漏斗</template>
             <template #extra>
-              <span class="chart-card__extra">核心运营比率柱状图</span>
+              <span class="chart-card__extra">注册→入驻→试用→付费→履约</span>
             </template>
             <EchartsUI ref="conversionChartRef" height="360px" />
+          </a-card>
+        </a-col>
+      </a-row>
+
+      <a-row :gutter="[16, 16]">
+        <a-col :xs="24" :xl="12">
+          <a-card
+            title="试用→付费窗口"
+            :bordered="false"
+            class="chart-card"
+            :loading="loading"
+          >
+            <div class="workbench-metrics">
+              <div
+                v-for="item in trialToPaid"
+                :key="item.windowDays"
+                class="workbench-metric"
+              >
+                <div class="workbench-metric__label">
+                  {{ item.windowDays }} 日内转化
+                </div>
+                <div class="workbench-metric__value">
+                  {{ formatRateOrSparse(item.rate, item.cohortSize) }}
+                </div>
+                <div class="health-item__tip">
+                  {{ item.converted }} / {{ item.cohortSize }} 家新机构
+                </div>
+              </div>
+            </div>
+          </a-card>
+        </a-col>
+        <a-col :xs="24" :xl="12">
+          <a-card
+            title="渠道付费转化"
+            :bordered="false"
+            class="chart-card"
+            :loading="loading"
+          >
+            <a-table
+              :columns="[
+                { title: '渠道', dataIndex: 'channel' },
+                { title: '已用码', dataIndex: 'usedCodes', width: 90 },
+                { title: '付费机构', dataIndex: 'paidOrgs', width: 100 },
+                { title: '转化率', dataIndex: 'rate', width: 100 },
+              ]"
+              :data-source="channelPay"
+              :pagination="false"
+              row-key="channel"
+              size="small"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.dataIndex === 'rate'">
+                  {{
+                    formatRateOrSparse(
+                      record.rate,
+                      record.usedCodes,
+                      3,
+                    )
+                  }}
+                </template>
+              </template>
+            </a-table>
+            <div
+              v-if="channelPay.length === 0"
+              class="health-item__tip"
+              style="margin-top: 12px"
+            >
+              暂无已兑付激活码渠道数据
+            </div>
           </a-card>
         </a-col>
       </a-row>

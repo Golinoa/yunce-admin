@@ -21,6 +21,18 @@ export interface DashboardOverview {
     totalUsers: number;
     usedActivationCodes: number;
   };
+  /** 激活码渠道 × 付费转化 */
+  channelPay?: Array<{
+    channel: string;
+    paidOrgs: number;
+    rate: number;
+    usedCodes: number;
+  }>;
+  engagement?: {
+    dau: number;
+    onlineRate: number;
+    wau: number;
+  };
   feedbackAlerts: {
     list: Array<{
       content: string;
@@ -40,6 +52,13 @@ export interface DashboardOverview {
     pendingCount: number;
     processingCount: number;
   };
+  /** 机构 SaaS 漏斗 */
+  funnel?: Array<{
+    conversionFromPrev: null | number;
+    count: number;
+    key: string;
+    label: string;
+  }>;
   membershipAlerts: {
     expiringIn7Days: number;
     expiringIn15Days: number;
@@ -69,16 +88,34 @@ export interface DashboardOverview {
       versionCode: string;
     }>;
   };
+  /** 付费机构 / 活跃机构 */
+  paidOrgRate?: {
+    activeOrgs: number;
+    paidOrgs: number;
+    rate: number;
+  };
   retention: {
     day1: number;
+    day1Meta?: { cohortSize: number; retained: number };
+    day3?: number;
+    day3Meta?: { cohortSize: number; retained: number };
     day7: number;
+    day7Meta?: { cohortSize: number; retained: number };
   };
   series: Array<{
     activation: number;
+    activeUsers?: number;
     date: string;
     invites: number;
     members: number;
     users: number;
+  }>;
+  /** 试用→付费窗口转化 */
+  trialToPaid?: Array<{
+    cohortSize: number;
+    converted: number;
+    rate: number;
+    windowDays: number;
   }>;
 }
 

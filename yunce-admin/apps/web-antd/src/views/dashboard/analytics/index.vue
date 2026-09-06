@@ -117,6 +117,9 @@ const feedbackAlerts = computed(() => overview.value?.feedbackAlerts ?? null);
 const membershipAlerts = computed(
   () => overview.value?.membershipAlerts ?? null,
 );
+const orgExpireAlerts = computed(
+  () => overview.value?.orgExpireAlerts ?? null,
+);
 const retention = computed(() => overview.value?.retention ?? null);
 
 const trendRows = computed<TrendRow[]>(() => {
@@ -455,10 +458,17 @@ const quickActions = computed<QuickActionItem[]>(() => {
     {
       description: '处理待审核入驻申请',
       key: 'store-entry',
-      metric: '入驻审核',
+      metric: `待审 ${formatNumber(current?.pendingStoreEntryCount ?? 0)}`,
       path: storeLink.path,
       query: storeLink.query,
       title: '入驻审核',
+    },
+    {
+      description: '查看机构档位、到期与配额',
+      key: 'organizations',
+      metric: `30天到期 ${formatNumber(orgExpireAlerts.value?.expiringIn30Days ?? 0)}`,
+      path: '/operation/organizations',
+      title: '机构管理',
     },
   ];
 });
@@ -484,6 +494,27 @@ const membershipWorkbenchMetrics = computed<WorkbenchMetricItem[]>(() => {
     },
   ];
 });
+
+const orgExpireWorkbenchMetrics = computed<WorkbenchMetricItem[]>(() => [
+  {
+    key: 'org-expire-30',
+    label: '机构30天内到期',
+    value: formatNumber(orgExpireAlerts.value?.expiringIn30Days ?? 0),
+  },
+  {
+    key: 'pending-entry',
+    label: '待审入驻',
+    value: formatNumber(cards.value?.pendingStoreEntryCount ?? 0),
+  },
+]);
+
+function goOrganizationList() {
+  void router.push({ path: '/operation/organizations' });
+}
+
+function goOrgExpireAlert(_item: { id: string }) {
+  void router.push({ path: '/operation/organizations' });
+}
 
 const feedbackWorkbenchMetrics = computed<WorkbenchMetricItem[]>(() => {
   const current = feedbackAlerts.value;
@@ -902,6 +933,58 @@ onMounted(async () => {
               <a-empty
                 v-if="(feedbackAlerts?.list?.length ?? 0) === 0"
                 description="当前没有待处理反馈"
+                :image="false"
+              />
+            </div>
+          </a-card>
+        </a-col>
+      </a-row>
+
+      <a-row :gutter="[16, 16]" class="mt-4">
+        <a-col :xs="24" :xl="12">
+          <a-card :bordered="false" class="chart-card" :loading="loading">
+            <template #title>机构到期预警</template>
+            <template #extra>
+              <a-button type="link" @click="goOrganizationList">
+                查看机构管理
+              </a-button>
+            </template>
+            <div class="workbench-metrics">
+              <div
+                v-for="item in orgExpireWorkbenchMetrics"
+                :key="item.key"
+                class="workbench-metric"
+              >
+                <div class="workbench-metric__label">{{ item.label }}</div>
+                <div class="workbench-metric__value">{{ item.value }}</div>
+              </div>
+            </div>
+            <div class="task-list">
+              <button
+                v-for="item in orgExpireAlerts?.list ?? []"
+                :key="item.id"
+                type="button"
+                class="task-item task-item--clickable"
+                @click="goOrgExpireAlert(item)"
+              >
+                <div class="task-item__header">
+                  <div class="task-item__title-wrap">
+                    <span class="task-item__title">{{ item.name }}</span>
+                    <a-tag color="orange">
+                      {{ resolveDaysLeftText(item.daysLeft) }}
+                    </a-tag>
+                  </div>
+                  <span class="task-item__meta">
+                    到期 {{ formatDateTime(item.expireAt) }}
+                  </span>
+                </div>
+                <div class="task-item__desc">
+                  <span>档位 {{ item.versionCode }}</span>
+                </div>
+              </button>
+              <a-empty
+                v-if="(orgExpireAlerts?.list?.length ?? 0) === 0"
+                description="当前 30 天内暂无机构到期预警"
                 :image="false"
               />
             </div>

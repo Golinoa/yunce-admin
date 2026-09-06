@@ -1,7 +1,11 @@
 <script lang="ts" setup>
-import type { StoreEntryApplicationDetail, StoreEntryStatus } from '#/api';
+import type {
+  OrganizationVersionCode,
+  StoreEntryApplicationDetail,
+  StoreEntryStatus,
+} from '#/api';
 
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { message } from 'ant-design-vue';
@@ -15,9 +19,12 @@ import {
   formatVersionLabel,
   versionColor as resolveVersionColor,
 } from '#/utils/organization-version';
+import { ENTITLEMENT_CODES } from '#/utils/organization-version-split';
 
 const route = useRoute();
 const router = useRouter();
+
+type GrantChoice = 'NONE' | (typeof ENTITLEMENT_CODES)[number];
 
 const loading = ref(false);
 const detail = ref<null | StoreEntryApplicationDetail>(null);
@@ -25,6 +32,8 @@ const approving = ref(false);
 const rejecting = ref(false);
 const rejectOpen = ref(false);
 const approveAsTest = ref(false);
+const grantChoice = ref<GrantChoice>('NONE');
+const grantDurationDays = ref<number>(365);
 const rejectForm = reactive({
   reason: '',
 });
@@ -42,6 +51,35 @@ const statusColorMap: Record<StoreEntryStatus, string> = {
   PENDING: 'orange',
   REJECTED: 'red',
 };
+
+const grantOptions = [
+  { label: '不发放', value: 'NONE' as GrantChoice },
+  { label: '试用 TRIAL · 14 天', value: 'TRIAL' as GrantChoice },
+  { label: '众创 FREE', value: 'FREE' as GrantChoice },
+  { label: '基础 BASIC', value: 'BASIC' as GrantChoice },
+  { label: '成长 STANDARD', value: 'STANDARD' as GrantChoice },
+  { label: '旗舰 FLAGSHIP', value: 'FLAGSHIP' as GrantChoice },
+];
+
+const needsDurationInput = computed(
+  () =>
+    grantChoice.value === 'BASIC' ||
+    grantChoice.value === 'STANDARD' ||
+    grantChoice.value === 'FLAGSHIP',
+);
+
+function onGrantChoiceChange(value: GrantChoice) {
+  grantChoice.value = value;
+  if (value === 'TRIAL') {
+    grantDurationDays.value = 14;
+  } else if (value === 'FREE') {
+    grantDurationDays.value = 365;
+  } else if (value === 'BASIC' || value === 'STANDARD' || value === 'FLAGSHIP') {
+    if (!grantDurationDays.value || grantDurationDays.value === 14) {
+      grantDurationDays.value = 365;
+    }
+  }
+}
 
 function formatDateTime(value?: null | string) {
   if (!value) {
@@ -98,15 +136,35 @@ async function handleApprove() {
   if (!detail.value) {
     return;
   }
+  if (
+    needsDurationInput.value &&
+    (!grantDurationDays.value || grantDurationDays.value < 1)
+  ) {
+    message.warning('请填写权益发放天数');
+    return;
+  }
   approving.value = true;
   try {
+    const grantEntitlement =
+      grantChoice.value === 'NONE'
+        ? null
+        : {
+            versionCode: grantChoice.value as OrganizationVersionCode,
+            durationDays:
+              grantChoice.value === 'TRIAL'
+                ? 14
+                : grantDurationDays.value || undefined,
+          };
     await approveStoreEntryApplicationApi(detail.value.id, {
       isTest: approveAsTest.value,
+      grantEntitlement,
     });
     message.success(
       approveAsTest.value
         ? '已通过（测试机构）：可在机构管理中解散或解绑负责人'
-        : '已通过该入驻申请，机构已启用',
+        : grantChoice.value === 'NONE'
+          ? '已通过该入驻申请，机构已启用'
+          : `已通过并发放 ${formatVersionLabel(grantChoice.value)}`,
     );
     await fetchDetail();
   } finally {
@@ -116,12 +174,12 @@ async function handleApprove() {
 
 async function handleReject() {
   if (!detail.value) {
-    return;
+    return Promise.reject();
   }
   const reason = rejectForm.reason.trim();
   if (!reason) {
     message.warning('请填写拒绝原因');
-    return;
+    return Promise.reject();
   }
   rejecting.value = true;
   try {
@@ -129,6 +187,8 @@ async function handleReject() {
     message.success('已拒绝该入驻申请');
     rejectOpen.value = false;
     await fetchDetail();
+  } catch (error) {
+    return Promise.reject(error);
   } finally {
     rejecting.value = false;
   }
@@ -150,17 +210,35 @@ onMounted(fetchDetail);
     >
       <template #extra>
         <template v-if="detail && detail.status === 'PENDING'">
-          <a-space>
+          <a-space wrap>
             <span class="text-[13px] text-[var(--ant-color-text-secondary)]">
               <a-checkbox v-model:checked="approveAsTest">
                 标记为测试机构
               </a-checkbox>
             </span>
+            <a-select
+              :value="grantChoice"
+              :options="grantOptions"
+              style="width: 200px"
+              placeholder="通过时发放权益"
+              @change="onGrantChoiceChange"
+            />
+            <a-input-number
+              v-if="needsDurationInput || grantChoice === 'FREE'"
+              v-model:value="grantDurationDays"
+              :min="1"
+              :max="3650"
+              :precision="0"
+              style="width: 120px"
+              placeholder="天数"
+            />
             <a-popconfirm
               :title="
                 approveAsTest
                   ? '确认为测试机构并通过？测试机构可解散清数据或解绑负责人。'
-                  : '确认通过该门店入驻申请吗？通过后机构将立即启用并创建默认校区。'
+                  : grantChoice === 'NONE'
+                    ? '确认通过该门店入驻申请吗？通过后机构将立即启用并创建默认校区。'
+                    : `确认通过并发放 ${formatVersionLabel(grantChoice)}？`
               "
               ok-text="确认通过"
               cancel-text="取消"

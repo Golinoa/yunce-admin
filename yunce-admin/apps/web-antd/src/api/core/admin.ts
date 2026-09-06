@@ -10,9 +10,11 @@ export interface DashboardOverview {
     activeInviteRules: number;
     newUsersGrowth: number;
     newUsersInRange: number;
+    pendingStoreEntryCount?: number;
     totalActivationCodes: number;
     totalInvites: number;
     totalMembers: number;
+    totalOrganizations?: number;
     totalParents: number;
     totalStudents: number;
     totalTeachers: number;
@@ -54,6 +56,17 @@ export interface DashboardOverview {
         nickname?: null | string;
         phone?: null | string;
       };
+    }>;
+  };
+  /** 机构 SaaS 到期（排除测试店） */
+  orgExpireAlerts?: {
+    expiringIn30Days: number;
+    list: Array<{
+      daysLeft: number;
+      expireAt: string;
+      id: string;
+      name: string;
+      versionCode: string;
     }>;
   };
   retention: {
@@ -168,17 +181,45 @@ export function getUserDetailApi(id: string) {
   return requestClient.get(`/users/${id}`);
 }
 
+/** 权益档 code（与 Organization.versionCode / MembershipPlan.targetVersionCode 对齐） */
+export type EntitlementVersionCode =
+  | 'BASIC'
+  | 'FLAGSHIP'
+  | 'FREE'
+  | 'STANDARD'
+  | 'TRIAL';
+
+export interface MembershipPlanPayload {
+  durationDays: number;
+  isActive?: boolean;
+  name: string;
+  pointsCost?: number;
+  remark?: null | string;
+  /** 激活码/手动履约目标权益档 */
+  targetVersionCode?: EntitlementVersionCode | null;
+}
+
+export interface GrantMembershipPayload {
+  durationDays?: number;
+  planId?: string;
+  profileId: string;
+  remark?: null | string;
+  source?: 'ACTIVATION_CODE' | 'MANUAL' | 'POINT_EXCHANGE';
+  /** 无套餐时必填；有套餐时可覆盖 plan.targetVersionCode */
+  targetVersionCode?: EntitlementVersionCode;
+}
+
 export function getMembershipPlansApi() {
   return requestClient.get('/membership-plans');
 }
 
-export function createMembershipPlanApi(data: Record<string, unknown>) {
+export function createMembershipPlanApi(data: MembershipPlanPayload) {
   return requestClient.post('/membership-plans', data);
 }
 
 export function updateMembershipPlanApi(
   id: string,
-  data: Record<string, unknown>,
+  data: Partial<MembershipPlanPayload>,
 ) {
   return requestClient.put(`/membership-plans/${id}`, data);
 }
@@ -187,7 +228,7 @@ export function getMembershipsApi(params: Record<string, unknown>) {
   return requestClient.get('/memberships', { params });
 }
 
-export function grantMembershipApi(data: Record<string, unknown>) {
+export function grantMembershipApi(data: GrantMembershipPayload) {
   return requestClient.post('/memberships/grant', data);
 }
 
@@ -205,6 +246,11 @@ export function batchDeleteActivationCodesApi(data: { ids: string[] }) {
 
 export function voidActivationCodeApi(id: string) {
   return requestClient.post(`/activation-codes/${id}/void`);
+}
+
+/** 支付订单只读列表 */
+export function getPaymentOrdersApi(params: Record<string, unknown>) {
+  return requestClient.get('/payment-orders', { params });
 }
 
 export function getInvitesApi(params: Record<string, unknown>) {
@@ -256,6 +302,7 @@ export function updateActivityApi(id: string, data: Record<string, unknown>) {
 
 export interface OpsNotifySwitches {
   feedbackNew: boolean;
+  membershipPaid: boolean;
   orgVersionChanged: boolean;
   storeEntryApproved: boolean;
   storeEntryRejected: boolean;
@@ -271,6 +318,7 @@ export interface OpsNotifyTemplateFields {
 
 export type OpsNotifyTemplateKey =
   | 'feedbackNew'
+  | 'membershipPaid'
   | 'orgVersionChanged'
   | 'storeEntryApproved'
   | 'storeEntryRejected'

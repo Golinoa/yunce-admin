@@ -23,7 +23,7 @@ export const DEFAULT_ORGANIZATION_VERSIONS: Array<{
   },
   {
     code: 'FREE',
-    name: '免费版',
+    name: '众创版',
     description: '40 会员 / 2 员工 / 1 校区；禁线索溯源、禁批量导入导出',
     maxMembers: 40,
     maxEmployees: 2,
@@ -31,8 +31,17 @@ export const DEFAULT_ORGANIZATION_VERSIONS: Array<{
     features: { leadTrace: false, batchImportExport: false },
   },
   {
+    code: 'BASIC',
+    name: '基础版',
+    description: '基础档权益',
+    maxMembers: 80,
+    maxEmployees: 5,
+    maxCampuses: 1,
+    features: { leadTrace: false, batchImportExport: false },
+  },
+  {
     code: 'STANDARD',
-    name: '标准版',
+    name: '成长版',
     description: '200 会员 / 20 员工 / 1 校区；开启线索溯源',
     maxMembers: 200,
     maxEmployees: 20,
@@ -53,6 +62,7 @@ export const DEFAULT_ORGANIZATION_VERSIONS: Array<{
 const VERSION_COLOR: Record<string, string> = {
   TRIAL: 'orange',
   FREE: 'default',
+  BASIC: 'cyan',
   STANDARD: 'blue',
   FLAGSHIP: 'purple',
 };

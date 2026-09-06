@@ -2,12 +2,14 @@
 import type { StoreEntryApplicationItem, StoreEntryStatus } from '#/api';
 
 import { computed, onMounted, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { getStoreEntryApplicationsApi } from '#/api';
+import { resolveRouteQueryString } from '#/utils/ops-nav';
 
 import OperationTablePage from '../components/OperationTablePage.vue';
 
+const route = useRoute();
 const router = useRouter();
 
 const loading = ref(false);
@@ -106,7 +108,17 @@ function openDetail(record: Pick<StoreEntryApplicationItem, 'id'>) {
   });
 }
 
-onMounted(fetchApplications);
+function applyRouteQuery() {
+  const status = resolveRouteQueryString(route.query, 'status');
+  if (status === 'PENDING' || status === 'APPROVED' || status === 'REJECTED') {
+    filters.status = status;
+  }
+}
+
+onMounted(() => {
+  applyRouteQuery();
+  void fetchApplications();
+});
 </script>
 
 <template>

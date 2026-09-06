@@ -33,6 +33,7 @@ const detailLoading = ref(false);
 const detailOpen = ref(false);
 const detail = ref<null | Record<string, any>>(null);
 const adjustOpen = ref(false);
+const adjustSubmitting = ref(false);
 const filters = reactive({
   keyword: '',
   membershipStatus: undefined as MembershipStatus | undefined,
@@ -61,8 +62,10 @@ const membershipStatusLabelMap: Record<MembershipStatus, string> = {
 const tableColumns = [
   { title: '用户名称', dataIndex: 'displayName' },
   { title: '手机号', dataIndex: 'phone' },
+  { title: '会员套餐', dataIndex: 'membershipPlanName' },
   { title: '会员状态', dataIndex: 'membershipStatus' },
   { title: '会员到期', dataIndex: 'membershipExpireAt' },
+  { title: '邀请人', dataIndex: 'inviterName' },
   { title: '积分余额', dataIndex: 'pointsBalance' },
   { title: '邀请人数', dataIndex: 'inviteCount' },
   { title: '注册时间', dataIndex: 'createdAt' },
@@ -90,10 +93,36 @@ function formatDisplayName(record: Pick<UserRecord, 'name' | 'nickname'>) {
   return record.name || record.nickname || '-';
 }
 
+function formatInviterName(
+  inviter?: null | { nickname?: null | string; phone?: null | string },
+) {
+  if (!inviter) return '-';
+  return inviter.nickname || inviter.phone || '-';
+}
+
+/** 详情会员状态：取 endAt>=now 的 ACTIVE grant，否则 EXPIRED（不用 grants[0]） */
+function resolveDetailMembershipStatus(
+  grants?: Array<{ endAt?: null | string; status?: string }>,
+): MembershipStatus {
+  const now = Date.now();
+  const active = (grants ?? []).find((g) => {
+    if (g.status !== 'ACTIVE') return false;
+    if (!g.endAt) return true;
+    return new Date(g.endAt).getTime() >= now;
+  });
+  return active ? 'ACTIVE' : 'EXPIRED';
+}
+
+const detailMembershipStatus = computed(() =>
+  resolveDetailMembershipStatus(detail.value?.membershipGrants),
+);
+
 const tableData = computed(() =>
   records.value.map((item) => ({
     ...item,
     displayName: formatDisplayName(item),
+    inviterName: formatInviterName(item.inviter),
+    membershipPlanName: item.membershipPlanName || '-',
   })),
 );
 
@@ -146,23 +175,30 @@ function openAdjustModal(record: Pick<UserRecord, 'id'>) {
 async function handleAdjustPoints() {
   if (!adjustForm.profileId || adjustForm.amount === 0) {
     message.error('请输入有效的积分调整值');
-    return;
+    return Promise.reject();
   }
   const ok = await confirmAction({
     content: `确认为用户 ${adjustForm.profileId} 调整积分 ${adjustForm.amount}？`,
     okType: 'danger',
     title: '确认调整积分',
   });
-  if (!ok) return;
-  await adjustPointsApi(adjustForm);
-  message.success('积分调整成功');
-  adjustOpen.value = false;
-  await Promise.all([
-    fetchUsers(),
-    detail.value
-      ? handleOpenDetail({ id: adjustForm.profileId })
-      : Promise.resolve(),
-  ]);
+  if (!ok) return Promise.reject();
+  adjustSubmitting.value = true;
+  try {
+    await adjustPointsApi(adjustForm);
+    message.success('积分调整成功');
+    adjustOpen.value = false;
+    await Promise.all([
+      fetchUsers(),
+      detail.value
+        ? handleOpenDetail({ id: adjustForm.profileId })
+        : Promise.resolve(),
+    ]);
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    adjustSubmitting.value = false;
+  }
 }
 
 onMounted(fetchUsers);
@@ -258,20 +294,35 @@ onMounted(fetchUsers);
           {{ detail.phone || '-' }}
         </a-descriptions-item>
         <a-descriptions-item label="会员状态">
-          {{
-            formatMembershipStatus(
-              detail.membershipGrants?.[0]?.status || 'EXPIRED',
-            )
-          }}
+          {{ formatMembershipStatus(detailMembershipStatus) }}
         </a-descriptions-item>
         <a-descriptions-item label="积分余额">
           {{ detail.pointAccount?.balance ?? 0 }}
         </a-descriptions-item>
         <a-descriptions-item label="邀请人">
-          {{ detail.receivedInvite?.inviter?.nickname || '-' }}
+          {{
+            detail.receivedInvite?.inviter?.nickname ||
+            detail.inviter?.nickname ||
+            detail.inviter?.phone ||
+            '-'
+          }}
         </a-descriptions-item>
         <a-descriptions-item label="创建时间">
           {{ formatDateTime(detail.createdAt) }}
+        </a-descriptions-item>
+        <a-descriptions-item
+          v-if="detail.organization?.name || detail.organizationName"
+          label="所属机构"
+        >
+          {{ detail.organization?.name || detail.organizationName }}
+        </a-descriptions-item>
+        <a-descriptions-item
+          v-if="detail.organization?.versionCode || detail.organizationVersionCode"
+          label="机构权益档"
+        >
+          {{
+            detail.organization?.versionCode || detail.organizationVersionCode
+          }}
         </a-descriptions-item>
       </a-descriptions>
       <a-card class="mt-4" size="small" title="机构基础数据">
@@ -348,6 +399,7 @@ onMounted(fetchUsers);
   <a-modal
     v-model:open="adjustOpen"
     title="调整积分"
+    :confirm-loading="adjustSubmitting"
     @ok="handleAdjustPoints"
   >
     <a-form layout="vertical">

@@ -200,9 +200,19 @@ export function getStoreEntryApplicationDetailApi(id: string) {
   );
 }
 
+/** 审核通过时可选立即发放的权益 */
+export interface ApproveStoreEntryGrantEntitlement {
+  /** 缺省：TRIAL=14 天，其余=365 天 */
+  durationDays?: number;
+  versionCode: OrganizationVersionCode;
+}
+
 export function approveStoreEntryApplicationApi(
   id: string,
-  data?: { isTest?: boolean },
+  data?: {
+    grantEntitlement?: ApproveStoreEntryGrantEntitlement | null;
+    isTest?: boolean;
+  },
 ) {
   return requestClient.post<{
     applicationId: string;
@@ -317,6 +327,35 @@ export function setOrganizationVersionApi(
 ) {
   return requestClient.post<SetOrganizationVersionResult>(
     `/organizations/${id}/version`,
+    data,
+  );
+}
+
+/** 运营后台直接为机构发放权益（续期 + 升档） */
+export interface GrantOrganizationEntitlementParams {
+  durationDays: number;
+  quotaOverrides?: null | {
+    features?: QuotaFeatures;
+    maxCampuses?: number;
+    maxEmployees?: number;
+    maxMembers?: number;
+  };
+  remark?: null | string;
+  versionCode: OrganizationVersionCode;
+}
+
+export interface GrantOrganizationEntitlementResult {
+  expireAt?: null | string;
+  grantId?: string;
+  versionCode: OrganizationVersionCode;
+}
+
+export function grantOrganizationEntitlementApi(
+  id: string,
+  data: GrantOrganizationEntitlementParams,
+) {
+  return requestClient.post<GrantOrganizationEntitlementResult>(
+    `/organizations/${id}/grant-entitlement`,
     data,
   );
 }

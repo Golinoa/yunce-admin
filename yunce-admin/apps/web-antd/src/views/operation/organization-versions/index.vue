@@ -21,6 +21,7 @@ import {
   listOrganizationVersionsFromApi,
   versionColor,
 } from '#/utils/organization-version';
+import { splitOrganizationVersions } from '#/utils/organization-version-split';
 
 const loading = ref(false);
 const savingMatrix = ref(false);
@@ -34,6 +35,7 @@ const createOpen = ref(false);
 const editing = ref(false);
 const creating = ref(false);
 const editTarget = ref<null | OrganizationVersionItem>(null);
+const editIsPaySku = ref(false);
 
 const editForm = reactive({
   name: '',
@@ -67,6 +69,10 @@ const statusOptions = [
   { label: '停用', value: 'disabled' },
 ];
 
+const splitVersions = computed(() => splitOrganizationVersions(records.value));
+const entitlements = computed(() => splitVersions.value.entitlements);
+const paySkus = computed(() => splitVersions.value.paySkus);
+
 const activeModules = computed(() =>
   featureModules.value.filter((m) => m.status !== 'disabled'),
 );
@@ -74,7 +80,7 @@ const activeModules = computed(() =>
 const matrixColumns = computed(() => [
   { title: '功能模块', dataIndex: 'name', fixed: 'left', width: 160 },
   { title: '分类', dataIndex: 'category', width: 100 },
-  ...records.value.map((v) => ({
+  ...entitlements.value.map((v) => ({
     title: `${v.name}`,
     dataIndex: v.code,
     width: 110,
@@ -120,8 +126,9 @@ function rebuildMatrixDraft(
   versions: OrganizationVersionItem[],
   modules: FeatureModuleItem[],
 ) {
+  const { entitlements: entitlementRows } = splitOrganizationVersions(versions);
   const draft: Record<string, Record<string, boolean>> = {};
-  for (const v of versions) {
+  for (const v of entitlementRows) {
     const row: Record<string, boolean> = {};
     for (const m of modules) {
       row[m.code] = v.features?.[m.code] === true;
@@ -153,8 +160,9 @@ async function fetchAll() {
   }
 }
 
-function openEdit(record: OrganizationVersionItem) {
+function openEdit(record: OrganizationVersionItem, isPaySku = false) {
   editTarget.value = record;
+  editIsPaySku.value = isPaySku;
   editForm.name = record.name;
   editForm.description = record.description ?? '';
   editForm.maxMembers = record.maxMembers;
@@ -184,32 +192,42 @@ function openCreate() {
 }
 
 async function submitEdit() {
-  if (!editTarget.value) return;
+  if (!editTarget.value) return Promise.reject();
   if (!editForm.name.trim()) {
     message.warning('版本名称不能为空');
-    return;
+    return Promise.reject();
   }
-  if (editForm.maxCampuses < 1) {
+  if (!editIsPaySku.value && editForm.maxCampuses < 1) {
     message.warning('校区数上限至少为 1');
-    return;
+    return Promise.reject();
   }
   editing.value = true;
   try {
     await updateOrganizationVersionApi(editTarget.value.code, {
       description: editForm.description.trim() || null,
       durationDays: editForm.durationDays,
-      maxCampuses: editForm.maxCampuses,
-      maxEmployees: editForm.maxEmployees,
-      maxMembers: editForm.maxMembers,
+      ...(editIsPaySku.value
+        ? {}
+        : {
+            maxCampuses: editForm.maxCampuses,
+            maxEmployees: editForm.maxEmployees,
+            maxMembers: editForm.maxMembers,
+          }),
       name: editForm.name.trim(),
       price: editForm.price,
       sort: editForm.sort,
       status: editForm.status,
       virtualProductId: editForm.virtualProductId.trim() || null,
     });
-    message.success(`套餐「${editForm.name}」已更新`);
+    message.success(
+      editIsPaySku.value
+        ? `货架 SKU「${editForm.name}」已更新`
+        : `套餐「${editForm.name}」已更新`,
+    );
     editOpen.value = false;
     await fetchAll();
+  } catch (error) {
+    return Promise.reject(error);
   } finally {
     editing.value = false;
   }
@@ -219,11 +237,11 @@ async function submitCreate() {
   const code = createForm.code.trim().toUpperCase();
   if (!/^[A-Z][A-Z0-9_]*$/.test(code)) {
     message.warning('code 需为大写字母开头，仅含字母/数字/下划线');
-    return;
+    return Promise.reject();
   }
   if (!createForm.name.trim()) {
     message.warning('版本名称不能为空');
-    return;
+    return Promise.reject();
   }
   creating.value = true;
   try {
@@ -243,6 +261,8 @@ async function submitCreate() {
     message.success(`套餐「${createForm.name}」已创建`);
     createOpen.value = false;
     await fetchAll();
+  } catch (error) {
+    return Promise.reject(error);
   } finally {
     creating.value = false;
   }
@@ -283,14 +303,15 @@ onMounted(fetchAll);
 
 <template>
   <div class="p-5">
-    <a-card title="套餐与功能" :bordered="false" class="mb-4">
+    <a-card title="权益档与功能" :bordered="false" class="mb-4">
       <div
         class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
       >
-        配置机构 SaaS 档位的用量配额，并在下方矩阵中按「档位 ×
+        配置机构 SaaS
+        权益档的用量配额，并在下方矩阵中按「档位 ×
         功能模块」开关授权。保存后即时影响
-        <code>assertFeature</code> / 小程序 entitlements。在线购买需填写「虚拟支付道具
-        ID」且售价（分）与 MP 道具价一致；留空则仅支持激活码。个人会员卡请到「会员管理」。
+        <code>assertFeature</code> / 小程序 entitlements。年限 SKU
+        仅营销定价，不参与功能权限，请到下方「货架 SKU」维护。个人会员卡请到「会员管理」。
       </div>
 
       <div class="mb-3 flex justify-end">
@@ -306,14 +327,12 @@ onMounted(fetchAll);
           { title: '员工上限', dataIndex: 'maxEmployees', width: 100 },
           { title: '校区上限', dataIndex: 'maxCampuses', width: 100 },
           { title: '已开功能', dataIndex: 'features', width: 100 },
-          { title: '售价(分)', dataIndex: 'price', width: 100 },
-          { title: '道具ID', dataIndex: 'virtualProductId', width: 120, ellipsis: true },
           { title: '时长(天)', dataIndex: 'durationDays', width: 90 },
           { title: '状态', dataIndex: 'status', width: 80 },
           { title: '更新时间', dataIndex: 'updatedAt', width: 120 },
           { title: '操作', key: 'action', width: 90 },
         ]"
-        :data-source="records"
+        :data-source="entitlements"
         :loading="loading"
         :pagination="false"
         row-key="code"
@@ -334,6 +353,55 @@ onMounted(fetchAll);
             {{ enabledFeatureCount(record.features) }} /
             {{ activeModules.length || '-' }}
           </template>
+          <template v-else-if="column.dataIndex === 'status'">
+            <a-tag :color="statusColor(record.status)">
+              {{ statusLabel(record.status) }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.dataIndex === 'updatedAt'">
+            {{ formatDateTime(record.updatedAt) }}
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <a-button type="link" size="small" @click="openEdit(record, false)">
+              编辑配额
+            </a-button>
+          </template>
+        </template>
+      </a-table>
+    </a-card>
+
+    <a-card title="货架 SKU（年限营销定价）" :bordered="false" class="mb-4">
+      <div
+        class="mb-4 rounded-lg bg-[var(--ant-color-fill-quaternary)] px-4 py-3 text-[13px] text-[var(--ant-color-text-secondary)]"
+      >
+        年限 SKU 仅营销定价，不参与功能权限。在线购买需填写「虚拟支付道具
+        ID」且售价（分）与 MP 道具价一致；留空则仅支持激活码。
+      </div>
+      <a-table
+        :columns="[
+          { title: 'SKU', dataIndex: 'code', width: 160 },
+          { title: '名称', dataIndex: 'name' },
+          { title: '售价(分)', dataIndex: 'price', width: 140 },
+          { title: '时长(天)', dataIndex: 'durationDays', width: 100 },
+          {
+            title: '道具ID',
+            dataIndex: 'virtualProductId',
+            width: 180,
+            ellipsis: true,
+          },
+          { title: '状态', dataIndex: 'status', width: 80 },
+          { title: '操作', key: 'action', width: 90 },
+        ]"
+        :data-source="paySkus"
+        :loading="loading"
+        :pagination="false"
+        row-key="code"
+        size="middle"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'code'">
+            <a-tag>{{ record.code }}</a-tag>
+          </template>
           <template v-else-if="column.dataIndex === 'price'">
             {{ record.price }}
             <span
@@ -351,19 +419,16 @@ onMounted(fetchAll);
               {{ statusLabel(record.status) }}
             </a-tag>
           </template>
-          <template v-else-if="column.dataIndex === 'updatedAt'">
-            {{ formatDateTime(record.updatedAt) }}
-          </template>
           <template v-else-if="column.key === 'action'">
-            <a-button type="link" size="small" @click="openEdit(record)">
-              编辑配额
+            <a-button type="link" size="small" @click="openEdit(record, true)">
+              编辑
             </a-button>
           </template>
         </template>
       </a-table>
     </a-card>
 
-    <a-card title="功能授权矩阵" :bordered="false">
+    <a-card title="功能授权矩阵（仅权益档）" :bordered="false">
       <template #extra>
         <a-button type="primary" :loading="savingMatrix" @click="saveMatrix">
           保存矩阵
@@ -374,7 +439,7 @@ onMounted(fetchAll);
         :data-source="matrixRows"
         :loading="loading"
         :pagination="false"
-        :scroll="{ x: 200 + records.length * 110 }"
+        :scroll="{ x: 200 + entitlements.length * 110 }"
         row-key="code"
         size="small"
       >
@@ -411,7 +476,11 @@ onMounted(fetchAll);
 
     <a-modal
       v-model:open="editOpen"
-      :title="`编辑配额：${editTarget?.name ?? ''}（${editTarget?.code ?? ''}）`"
+      :title="
+        editIsPaySku
+          ? `编辑货架 SKU：${editTarget?.name ?? ''}（${editTarget?.code ?? ''}）`
+          : `编辑配额：${editTarget?.name ?? ''}（${editTarget?.code ?? ''}）`
+      "
       ok-text="保存"
       cancel-text="取消"
       :confirm-loading="editing"
@@ -419,50 +488,54 @@ onMounted(fetchAll);
       @ok="submitEdit"
     >
       <a-form layout="vertical">
-        <a-form-item label="套餐名称" required>
+        <a-form-item label="名称" required>
           <a-input v-model:value="editForm.name" :maxlength="50" />
         </a-form-item>
-        <a-form-item label="套餐描述">
+        <a-form-item v-if="!editIsPaySku" label="套餐描述">
           <a-textarea
             v-model:value="editForm.description"
             :maxlength="200"
             :rows="2"
           />
         </a-form-item>
-        <a-divider orientation="left" plain>用量配额</a-divider>
-        <a-row :gutter="16">
-          <a-col :span="8">
-            <a-form-item label="会员数上限" required>
-              <a-input-number
-                v-model:value="editForm.maxMembers"
-                :min="0"
-                :precision="0"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item label="员工数上限" required>
-              <a-input-number
-                v-model:value="editForm.maxEmployees"
-                :min="0"
-                :precision="0"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item label="校区数上限" required>
-              <a-input-number
-                v-model:value="editForm.maxCampuses"
-                :min="1"
-                :precision="0"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-divider orientation="left" plain>售卖 / 虚拟支付</a-divider>
+        <template v-if="!editIsPaySku">
+          <a-divider orientation="left" plain>用量配额</a-divider>
+          <a-row :gutter="16">
+            <a-col :span="8">
+              <a-form-item label="会员数上限" required>
+                <a-input-number
+                  v-model:value="editForm.maxMembers"
+                  :min="0"
+                  :precision="0"
+                  style="width: 100%"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :span="8">
+              <a-form-item label="员工数上限" required>
+                <a-input-number
+                  v-model:value="editForm.maxEmployees"
+                  :min="0"
+                  :precision="0"
+                  style="width: 100%"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :span="8">
+              <a-form-item label="校区数上限" required>
+                <a-input-number
+                  v-model:value="editForm.maxCampuses"
+                  :min="1"
+                  :precision="0"
+                  style="width: 100%"
+                />
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </template>
+        <a-divider orientation="left" plain>
+          {{ editIsPaySku ? '营销定价 / 虚拟支付' : '售卖 / 虚拟支付' }}
+        </a-divider>
         <a-row :gutter="16">
           <a-col :span="8">
             <a-form-item label="售价（分）">
@@ -529,7 +602,7 @@ onMounted(fetchAll);
         <a-form-item label="版本 code" required>
           <a-input
             v-model:value="createForm.code"
-            placeholder="如 ENTERPRISE"
+            placeholder="如 ENTERPRISE 或 STANDARD_2Y"
             :maxlength="50"
             style="text-transform: uppercase"
           />

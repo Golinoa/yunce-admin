@@ -26,6 +26,7 @@ const options = ref<UserPickerOption[]>([]);
 const fetching = ref(false);
 let timer: null | ReturnType<typeof setTimeout> = null;
 let resolveSeq = 0;
+let searchSeq = 0;
 
 async function search(keyword: string) {
   if (!shouldSearchUsers(keyword)) {
@@ -35,6 +36,7 @@ async function search(keyword: string) {
     }
     return;
   }
+  const seq = ++searchSeq;
   fetching.value = true;
   try {
     const result = await getUsersApi({
@@ -42,13 +44,14 @@ async function search(keyword: string) {
       page: 1,
       pageSize: 20,
     });
+    if (seq !== searchSeq) return;
     const list = (result?.list ?? result ?? []) as UserPickerRecord[];
     options.value = toUserPickerOptions(Array.isArray(list) ? list : []);
     if (model.value && !options.value.some((o) => o.value === model.value)) {
       void resolveSelected(model.value);
     }
   } finally {
-    fetching.value = false;
+    if (seq === searchSeq) fetching.value = false;
   }
 }
 

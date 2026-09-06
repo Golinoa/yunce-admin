@@ -49,6 +49,7 @@ const TEMPLATE_META: Array<{
   },
   { key: 'storeEntryRejected', label: '入驻拒绝' },
   { key: 'orgVersionChanged', label: '机构版本变更' },
+  { key: 'membershipPaid', label: '会员支付出单' },
   { key: 'feedbackNew', label: '新反馈（预留）' },
 ];
 
@@ -64,6 +65,7 @@ const form = reactive({
   storeEntryApproved: true,
   storeEntryRejected: true,
   orgVersionChanged: true,
+  membershipPaid: true,
   feedbackNew: false,
   feishuAppId: '',
   feishuAppSecret: '',
@@ -84,6 +86,7 @@ const form = reactive({
     },
     storeEntryRejected: { title: '', detail: '' },
     orgVersionChanged: { title: '', detail: '' },
+    membershipPaid: { title: '', detail: '' },
     feedbackNew: { title: '', detail: '' },
   } as Record<OpsNotifyTemplateKey, OpsNotifyTemplateFields>,
 });
@@ -101,6 +104,7 @@ function applyConfig(data: OpsNotifyConfig) {
   form.storeEntryApproved = data.switches.storeEntryApproved;
   form.storeEntryRejected = data.switches.storeEntryRejected;
   form.orgVersionChanged = data.switches.orgVersionChanged;
+  form.membershipPaid = data.switches.membershipPaid !== false;
   form.feedbackNew = data.switches.feedbackNew;
   form.feishuAppId = data.feishuAppId || '';
   form.feishuAppSecret = '';
@@ -171,6 +175,7 @@ async function save(options?: { skipConfirm?: boolean }) {
         storeEntryApproved: form.storeEntryApproved,
         storeEntryRejected: form.storeEntryRejected,
         orgVersionChanged: form.orgVersionChanged,
+        membershipPaid: form.membershipPaid,
         feedbackNew: form.feedbackNew,
       },
       feishuAppId: form.feishuAppId.trim() || null,
@@ -476,6 +481,9 @@ onMounted(load);
             </a-form-item>
             <a-form-item label="机构版本变更">
               <a-switch v-model:checked="form.orgVersionChanged" />
+            </a-form-item>
+            <a-form-item label="会员支付出单（发货后）">
+              <a-switch v-model:checked="form.membershipPaid" />
             </a-form-item>
             <a-form-item label="新反馈（预留）">
               <a-switch v-model:checked="form.feedbackNew" />

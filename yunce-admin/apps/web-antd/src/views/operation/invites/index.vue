@@ -65,6 +65,8 @@ const pointRecords = ref<PointRecord[]>([]);
 const rules = ref<InviteRuleRecord[]>([]);
 const ruleOpen = ref(false);
 const pointOpen = ref(false);
+const ruleSubmitting = ref(false);
+const pointSubmitting = ref(false);
 const inviteFilters = reactive({
   keyword: '',
 });
@@ -232,28 +234,42 @@ async function handleSaveRule() {
     content: `确认保存邀请规则「${ruleForm.name || ruleForm.taskKey}」？`,
     title: '确认保存规则',
   });
-  if (!ok) return;
-  await saveInviteRuleApi(ruleForm.taskKey, ruleForm);
-  message.success('邀请规则已保存');
-  ruleOpen.value = false;
-  await fetchData();
+  if (!ok) return Promise.reject();
+  ruleSubmitting.value = true;
+  try {
+    await saveInviteRuleApi(ruleForm.taskKey, ruleForm);
+    message.success('邀请规则已保存');
+    ruleOpen.value = false;
+    await fetchData();
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    ruleSubmitting.value = false;
+  }
 }
 
 async function handleAdjustPoints() {
   if (!pointForm.profileId.trim() || pointForm.amount === 0) {
     message.error('请先选择用户并输入有效积分值');
-    return;
+    return Promise.reject();
   }
   const ok = await confirmAction({
     content: `确认为所选用户调整积分 ${pointForm.amount}？`,
     okType: 'danger',
     title: '确认调整积分',
   });
-  if (!ok) return;
-  await adjustPointsApi(pointForm);
-  message.success('积分调整成功');
-  pointOpen.value = false;
-  await fetchData();
+  if (!ok) return Promise.reject();
+  pointSubmitting.value = true;
+  try {
+    await adjustPointsApi(pointForm);
+    message.success('积分调整成功');
+    pointOpen.value = false;
+    await fetchData();
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    pointSubmitting.value = false;
+  }
 }
 
 async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
@@ -461,7 +477,12 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
         </a-table>
       </a-card>
     </a-space>
-    <a-modal v-model:open="ruleOpen" title="编辑邀请规则" @ok="handleSaveRule">
+    <a-modal
+      v-model:open="ruleOpen"
+      title="编辑邀请规则"
+      :confirm-loading="ruleSubmitting"
+      @ok="handleSaveRule"
+    >
       <a-form layout="vertical">
         <a-form-item label="任务标识">
           <a-input v-model:value="ruleForm.taskKey" disabled />
@@ -491,6 +512,7 @@ async function handleToggleRule(record: InviteRuleRecord, checked: boolean) {
     <a-modal
       v-model:open="pointOpen"
       title="手工调整积分"
+      :confirm-loading="pointSubmitting"
       @ok="handleAdjustPoints"
     >
       <a-form layout="vertical">

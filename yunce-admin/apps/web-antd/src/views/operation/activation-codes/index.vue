@@ -14,6 +14,7 @@ import {
 import { confirmAction } from '#/utils/confirm-action';
 import { summarizeActivationByChannel } from '#/utils/growth-summary';
 import { resolveRouteQueryString } from '#/utils/ops-nav';
+import { formatVersionLabel } from '#/utils/organization-version';
 
 import OperationTablePage from '../components/OperationTablePage.vue';
 
@@ -27,8 +28,15 @@ interface ActivationCodeRecord {
   expiresAt?: null | string;
   id: string;
   plan?: null | {
+    durationDays?: number;
     name?: null | string;
+    targetVersionCode?: null | string;
   };
+  redeemedOrganization?: null | {
+    id: string;
+    name: string;
+  };
+  remark?: null | string;
   status: ActivationCodeStatus;
   usedAt?: null | string;
   usedBy?: null | {
@@ -38,8 +46,11 @@ interface ActivationCodeRecord {
 }
 
 interface MembershipPlanOption {
+  durationDays: number;
   id: string;
+  isActive?: boolean;
   name: string;
+  targetVersionCode?: null | string;
 }
 
 const route = useRoute();
@@ -49,6 +60,7 @@ const summaryRecords = ref<ActivationCodeRecord[]>([]);
 const plans = ref<MembershipPlanOption[]>([]);
 const selectedRowKeys = ref<string[]>([]);
 const createOpen = ref(false);
+const createSubmitting = ref(false);
 const filters = reactive({
   batchNo: '',
   channel: '',
@@ -58,8 +70,10 @@ const filters = reactive({
 const createForm = reactive({
   batchNo: '',
   channel: '',
+  expiresAt: undefined as string | undefined,
   planId: '',
   quantity: 10,
+  remark: '',
 });
 const pagination = reactive({
   page: 1,
@@ -80,6 +94,22 @@ const statusLabelMap: Record<ActivationCodeStatus, string> = {
   USED: '已使用',
   VOIDED: '已作废',
 };
+
+const plansWithTarget = computed(() =>
+  plans.value.filter((p) => p.targetVersionCode && p.isActive !== false),
+);
+
+const selectedPlan = computed(() =>
+  plansWithTarget.value.find((p) => p.id === createForm.planId),
+);
+
+const createPreviewText = computed(() => {
+  const plan = selectedPlan.value;
+  if (!plan?.targetVersionCode) {
+    return '请选择已配置目标权益档的套餐';
+  }
+  return `将升到 ${formatVersionLabel(plan.targetVersionCode)} · ${plan.durationDays} 天`;
+});
 
 const channelSummary = computed(() =>
   summarizeActivationByChannel(summaryRecords.value),
@@ -178,25 +208,46 @@ function handleReset() {
 function openCreateModal() {
   createForm.batchNo = '';
   createForm.channel = '';
+  createForm.expiresAt = undefined;
   createForm.planId = '';
   createForm.quantity = 10;
+  createForm.remark = '';
   createOpen.value = true;
 }
 
 async function handleCreate() {
   if (!createForm.planId) {
     message.error('请选择会员套餐');
-    return;
+    return Promise.reject();
+  }
+  if (!selectedPlan.value?.targetVersionCode) {
+    message.error('所选套餐未配置目标权益档，无法生成激活码');
+    return Promise.reject();
   }
   const ok = await confirmAction({
-    content: `将生成 ${createForm.quantity} 个激活码（渠道：${createForm.channel || '未填'}），确认继续？`,
+    content: `将生成 ${createForm.quantity} 个激活码（${createPreviewText.value}；渠道：${createForm.channel || '未填'}），确认继续？`,
     title: '确认批量生成激活码',
   });
-  if (!ok) return;
-  await batchCreateActivationCodesApi(createForm);
-  message.success('激活码生成成功');
-  createOpen.value = false;
-  await fetchCodes();
+  if (!ok) return Promise.reject();
+
+  createSubmitting.value = true;
+  try {
+    await batchCreateActivationCodesApi({
+      batchNo: createForm.batchNo || undefined,
+      channel: createForm.channel || undefined,
+      expiresAt: createForm.expiresAt || undefined,
+      planId: createForm.planId,
+      quantity: createForm.quantity,
+      remark: createForm.remark || undefined,
+    });
+    message.success('激活码生成成功');
+    createOpen.value = false;
+    await fetchCodes();
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    createSubmitting.value = false;
+  }
 }
 
 async function handleVoid(id: string) {
@@ -324,10 +375,12 @@ onMounted(() => {
       :columns="[
         { title: '激活码', dataIndex: 'code' },
         { title: '套餐', dataIndex: ['plan', 'name'] },
+        { title: '目标权益档', dataIndex: ['plan', 'targetVersionCode'] },
         { title: '状态', dataIndex: 'status' },
         { title: '批次', dataIndex: 'batchNo' },
         { title: '渠道', dataIndex: 'channel' },
         { title: '使用用户', dataIndex: ['usedBy', 'nickname'] },
+        { title: '兑换机构', dataIndex: ['redeemedOrganization', 'name'] },
         { title: '有效期', dataIndex: 'expiresAt' },
         { title: '使用时间', dataIndex: 'usedAt' },
         { title: '创建时间', dataIndex: 'createdAt' },
@@ -357,7 +410,27 @@ onMounted(() => {
       row-key="id"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'status'">
+        <template
+          v-if="
+            JSON.stringify(column.dataIndex) ===
+            JSON.stringify(['plan', 'targetVersionCode'])
+          "
+        >
+          {{
+            record.plan?.targetVersionCode
+              ? formatVersionLabel(record.plan.targetVersionCode)
+              : '-'
+          }}
+        </template>
+        <template
+          v-else-if="
+            JSON.stringify(column.dataIndex) ===
+            JSON.stringify(['redeemedOrganization', 'name'])
+          "
+        >
+          {{ record.redeemedOrganization?.name || '-' }}
+        </template>
+        <template v-else-if="column.dataIndex === 'status'">
           {{ formatStatus(record.status) }}
         </template>
         <template
@@ -393,20 +466,31 @@ onMounted(() => {
   <a-modal
     v-model:open="createOpen"
     title="批量生成激活码"
+    :confirm-loading="createSubmitting"
     @ok="handleCreate"
   >
     <a-form layout="vertical">
-      <a-form-item label="会员套餐">
-        <a-select v-model:value="createForm.planId" placeholder="请选择套餐">
+      <a-form-item label="会员套餐" required>
+        <a-select
+          v-model:value="createForm.planId"
+          placeholder="仅显示已配置目标权益档的套餐"
+        >
           <a-select-option
-            v-for="item in plans"
+            v-for="item in plansWithTarget"
             :key="item.id"
             :value="item.id"
           >
-            {{ item.name }}
+            {{ item.name }}（{{ item.targetVersionCode }} ·
+            {{ item.durationDays }}天）
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-alert
+        class="mb-4"
+        show-icon
+        type="info"
+        :message="createPreviewText"
+      />
       <a-form-item label="数量">
         <a-input-number
           v-model:value="createForm.quantity"
@@ -415,11 +499,23 @@ onMounted(() => {
           class="w-full"
         />
       </a-form-item>
+      <a-form-item label="过期时间">
+        <a-date-picker
+          v-model:value="createForm.expiresAt"
+          show-time
+          value-format="YYYY-MM-DDTHH:mm:ss.SSSZ"
+          class="w-full"
+          placeholder="可选"
+        />
+      </a-form-item>
       <a-form-item label="批次号">
         <a-input v-model:value="createForm.batchNo" />
       </a-form-item>
       <a-form-item label="渠道">
         <a-input v-model:value="createForm.channel" />
+      </a-form-item>
+      <a-form-item label="备注">
+        <a-input v-model:value="createForm.remark" :maxlength="200" />
       </a-form-item>
     </a-form>
   </a-modal>

@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import type {
+  FeatureModuleItem,
   OrganizationItem,
   OrganizationQuotaUsage,
   OrganizationStatus,
   OrganizationVersionCode,
   OrganizationVersionItem,
-  OverLimitResult,
+  QuotaFeatures,
 } from '#/api';
 
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -18,11 +19,12 @@ import {
   adjustOrganizationExpireApi,
   dissolveOrganizationApi,
   freezeOrganizationApi,
+  getFeatureModulesApi,
   getOrganizationQuotaUsageApi,
   getOrganizationsApi,
   getOrganizationVersionsApi,
+  grantOrganizationEntitlementApi,
   setOrganizationIsTestApi,
-  setOrganizationVersionApi,
   unbindOrganizationOwnerApi,
   unfreezeOrganizationApi,
 } from '#/api';
@@ -33,6 +35,7 @@ import {
   listOrganizationVersionsFromApi,
   versionColor as resolveVersionColor,
 } from '#/utils/organization-version';
+import { splitOrganizationVersions } from '#/utils/organization-version-split';
 
 import OperationTablePage from '../components/OperationTablePage.vue';
 
@@ -45,6 +48,7 @@ const isFullAdmin = computed(() => {
 const loading = ref(false);
 const records = ref<OrganizationItem[]>([]);
 const versionDefinitions = ref<OrganizationVersionItem[]>([]);
+const featureModules = ref<FeatureModuleItem[]>([]);
 const filters = reactive({
   keyword: '',
   status: undefined as OrganizationStatus | undefined,
@@ -57,27 +61,20 @@ const pagination = reactive({
   total: 0,
 });
 
-/** 降配超限提示（Q8：存量保留、禁止新增） */
-const overLimitNotice = ref<null | {
-  campuses: boolean;
-  employees: boolean;
-  members: boolean;
-  name: string;
-}>(null);
+// ==================== 开通/续费弹窗 ====================
 
-// ==================== 版本调整弹窗 ====================
-
-const versionModalOpen = ref(false);
-const versionSubmitting = ref(false);
-const versionTarget = ref<null | OrganizationItem>(null);
-const versionForm = reactive({
+const grantModalOpen = ref(false);
+const grantSubmitting = ref(false);
+const grantTarget = ref<null | OrganizationItem>(null);
+const grantForm = reactive({
   versionCode: 'FREE' as OrganizationVersionCode,
+  durationDays: 365,
+  remark: '',
   enableOverride: false,
   maxMembers: 40,
   maxEmployees: 2,
   maxCampuses: 1,
-  leadTrace: false,
-  batchImportExport: false,
+  featureSwitches: {} as QuotaFeatures,
 });
 
 // ==================== 机构详情 / 配额使用率弹窗 ====================
@@ -96,6 +93,13 @@ const expireForm = reactive({
   days: 30,
   remark: '',
 });
+
+// ==================== 解散确认弹窗 ====================
+
+const dissolveOpen = ref(false);
+const dissolveSubmitting = ref(false);
+const dissolveTarget = ref<null | OrganizationItem>(null);
+const dissolveConfirmName = ref('');
 
 const statusOptions = [
   { label: '正常', value: 'ACTIVE' },
@@ -118,26 +122,86 @@ const statusColorMap: Record<OrganizationStatus, string> = {
   REJECTED: 'red',
 };
 
+const entitlementVersions = computed(
+  () => splitOrganizationVersions(versionDefinitions.value).entitlements,
+);
+
 const versionOptions = computed(() =>
-  buildVersionSelectOptions(versionDefinitions.value),
+  buildVersionSelectOptions(entitlementVersions.value),
+);
+
+const filterVersionOptions = computed(() =>
+  buildVersionSelectOptions(entitlementVersions.value),
+);
+
+const activeFeatureModules = computed(() =>
+  featureModules.value.filter((m) => m.status !== 'disabled'),
 );
 
 const selectedVersionDefaults = computed(
   () =>
-    versionDefinitions.value.find(
-      (item) => item.code === versionForm.versionCode,
+    entitlementVersions.value.find(
+      (item) => item.code === grantForm.versionCode,
     ) ?? null,
 );
 
+function resolveMaxMembers(org: OrganizationItem) {
+  const fromOverride = org.quotaOverrides?.maxMembers;
+  if (typeof fromOverride === 'number') return fromOverride;
+  const fromVersion = versionDefinitions.value.find(
+    (v) => v.code === org.versionCode,
+  )?.maxMembers;
+  return typeof fromVersion === 'number' ? fromVersion : null;
+}
+
+function resolveMaxEmployees(org: OrganizationItem) {
+  const fromOverride = org.quotaOverrides?.maxEmployees;
+  if (typeof fromOverride === 'number') return fromOverride;
+  const fromVersion = versionDefinitions.value.find(
+    (v) => v.code === org.versionCode,
+  )?.maxEmployees;
+  return typeof fromVersion === 'number' ? fromVersion : null;
+}
+
+function resolveMaxCampuses(org: OrganizationItem) {
+  const fromOverride = org.quotaOverrides?.maxCampuses;
+  if (typeof fromOverride === 'number') return fromOverride;
+  const fromVersion = versionDefinitions.value.find(
+    (v) => v.code === org.versionCode,
+  )?.maxCampuses;
+  return typeof fromVersion === 'number' ? fromVersion : org.maxCampuses;
+}
+
+function isExpiredActive(org: OrganizationItem) {
+  if (org.status !== 'ACTIVE' || !org.expireAt) return false;
+  return new Date(org.expireAt).getTime() < Date.now();
+}
+
 const tableData = computed(() =>
-  records.value.map((item) => ({
-    ...item,
-    ownerName:
-      item.owner?.name || item.owner?.nickname || item.owner?.phone || '-',
-    usageMembers: item.quotaUsage?.members ?? 0,
-    usageEmployees: item.quotaUsage?.employees ?? 0,
-    usageCampuses: item.quotaUsage?.campuses ?? 0,
-  })),
+  records.value.map((item) => {
+    const maxMembers = resolveMaxMembers(item);
+    const maxEmployees = resolveMaxEmployees(item);
+    const maxCampuses = resolveMaxCampuses(item);
+    const usedMembers = item.quotaUsage?.members ?? 0;
+    const usedEmployees = item.quotaUsage?.employees ?? 0;
+    const usedCampuses = item.quotaUsage?.campuses ?? 0;
+    return {
+      ...item,
+      ownerName:
+        item.owner?.name || item.owner?.nickname || item.owner?.phone || '-',
+      usageMembersText:
+        maxMembers === null ? String(usedMembers) : `${usedMembers}/${maxMembers}`,
+      usageEmployeesText:
+        maxEmployees === null
+          ? String(usedEmployees)
+          : `${usedEmployees}/${maxEmployees}`,
+      usageCampusesText:
+        typeof maxCampuses === 'number'
+          ? `${usedCampuses}/${maxCampuses}`
+          : String(usedCampuses),
+      expiredActive: isExpiredActive(item),
+    };
+  }),
 );
 
 function formatDateTime(value?: null | string) {
@@ -173,6 +237,14 @@ function featureLabel(enabled: boolean) {
   return enabled ? '开' : '关';
 }
 
+function defaultDurationDays(code: OrganizationVersionCode) {
+  if (code === 'TRIAL') return 14;
+  const fromVersion = entitlementVersions.value.find(
+    (item) => item.code === code,
+  )?.durationDays;
+  return fromVersion && fromVersion > 0 ? fromVersion : 365;
+}
+
 async function fetchOrganizations() {
   loading.value = true;
   try {
@@ -191,15 +263,20 @@ async function fetchOrganizations() {
   }
 }
 
-async function loadVersionDefinitions() {
+async function loadCatalog() {
   try {
-    const versionResult = await getOrganizationVersionsApi();
+    const [versionResult, moduleResult] = await Promise.all([
+      getOrganizationVersionsApi(),
+      getFeatureModulesApi(),
+    ]);
     versionDefinitions.value = listOrganizationVersionsFromApi(
       versionResult.list,
     );
+    featureModules.value = moduleResult.list ?? [];
   } catch {
     versionDefinitions.value = [];
-    message.error('套餐目录加载失败，版本变更已禁用，请稍后重试');
+    featureModules.value = [];
+    message.error('套餐/功能目录加载失败，开通续费已禁用，请稍后重试');
   }
 }
 
@@ -217,97 +294,107 @@ function handleReset() {
   void fetchOrganizations();
 }
 
-// ==================== 版本调整 ====================
+// ==================== 开通 / 续费 ====================
 
 function applyDefaultsFromVersion(code: OrganizationVersionCode) {
   const defaults =
-    versionDefinitions.value.find((item) => item.code === code) ?? null;
-  versionForm.maxMembers = defaults?.maxMembers ?? 40;
-  versionForm.maxEmployees = defaults?.maxEmployees ?? 2;
-  versionForm.maxCampuses = defaults?.maxCampuses ?? 1;
-  versionForm.leadTrace = defaults?.features?.leadTrace ?? false;
-  versionForm.batchImportExport =
-    defaults?.features?.batchImportExport ?? false;
+    entitlementVersions.value.find((item) => item.code === code) ?? null;
+  grantForm.durationDays = defaultDurationDays(code);
+  grantForm.maxMembers = defaults?.maxMembers ?? 40;
+  grantForm.maxEmployees = defaults?.maxEmployees ?? 2;
+  grantForm.maxCampuses = defaults?.maxCampuses ?? 1;
+  const switches: QuotaFeatures = {};
+  for (const mod of activeFeatureModules.value) {
+    switches[mod.code] = defaults?.features?.[mod.code] === true;
+  }
+  grantForm.featureSwitches = switches;
 }
 
-function prefillVersionForm(org: OrganizationItem) {
-  versionForm.versionCode = org.versionCode;
+function prefillGrantForm(org: OrganizationItem) {
+  const code = entitlementVersions.value.some((v) => v.code === org.versionCode)
+    ? org.versionCode
+    : (entitlementVersions.value[0]?.code ?? 'FREE');
+  grantForm.versionCode = code;
+  grantForm.remark = '';
   const overrides = org.quotaOverrides;
   const defaults =
-    versionDefinitions.value.find((item) => item.code === org.versionCode) ??
-    null;
+    entitlementVersions.value.find((item) => item.code === code) ?? null;
   if (overrides) {
-    versionForm.enableOverride = true;
-    versionForm.maxMembers = overrides.maxMembers ?? defaults?.maxMembers ?? 40;
-    versionForm.maxEmployees =
+    grantForm.enableOverride = true;
+    grantForm.maxMembers = overrides.maxMembers ?? defaults?.maxMembers ?? 40;
+    grantForm.maxEmployees =
       overrides.maxEmployees ?? defaults?.maxEmployees ?? 2;
-    versionForm.maxCampuses =
+    grantForm.maxCampuses =
       overrides.maxCampuses ?? defaults?.maxCampuses ?? 1;
-    versionForm.leadTrace =
-      overrides.features?.leadTrace ?? defaults?.features?.leadTrace ?? false;
-    versionForm.batchImportExport =
-      overrides.features?.batchImportExport ??
-      defaults?.features?.batchImportExport ??
-      false;
+    const switches: QuotaFeatures = {};
+    for (const mod of activeFeatureModules.value) {
+      switches[mod.code] =
+        overrides.features?.[mod.code] ??
+        defaults?.features?.[mod.code] === true;
+    }
+    grantForm.featureSwitches = switches;
+    grantForm.durationDays = defaultDurationDays(code);
   } else {
-    versionForm.enableOverride = false;
-    applyDefaultsFromVersion(org.versionCode);
+    grantForm.enableOverride = false;
+    applyDefaultsFromVersion(code);
   }
 }
 
-function openVersionModal(record: OrganizationItem) {
-  if (versionDefinitions.value.length === 0) {
-    message.error('套餐目录未加载，无法调整版本');
+function openGrantModal(record: OrganizationItem) {
+  if (entitlementVersions.value.length === 0) {
+    message.error('权益档目录未加载，无法开通/续费');
     return;
   }
-  versionTarget.value = record;
-  prefillVersionForm(record);
-  versionModalOpen.value = true;
+  grantTarget.value = record;
+  prefillGrantForm(record);
+  grantModalOpen.value = true;
 }
 
-function handleVersionCodeChange(code: OrganizationVersionCode) {
-  versionForm.versionCode = code;
+function handleGrantVersionChange(code: OrganizationVersionCode) {
+  grantForm.versionCode = code;
   applyDefaultsFromVersion(code);
 }
 
-async function submitVersionChange() {
-  if (!versionTarget.value) {
-    return;
+async function submitGrantEntitlement() {
+  if (!grantTarget.value) {
+    return Promise.reject();
   }
-  versionSubmitting.value = true;
+  if (!grantForm.versionCode) {
+    message.warning('请选择权益档');
+    return Promise.reject();
+  }
+  if (!grantForm.durationDays || grantForm.durationDays < 1) {
+    message.warning('请填写有效天数');
+    return Promise.reject();
+  }
+  const ok = await confirmAction({
+    content: `确认为「${grantTarget.value.name}」开通/续费 ${formatVersion(grantForm.versionCode)}，时长 ${grantForm.durationDays} 天？`,
+    title: '确认开通/续费',
+  });
+  if (!ok) return Promise.reject();
+
+  grantSubmitting.value = true;
   try {
-    const result = await setOrganizationVersionApi(versionTarget.value.id, {
-      versionCode: versionForm.versionCode,
-      quotaOverrides: versionForm.enableOverride
+    await grantOrganizationEntitlementApi(grantTarget.value.id, {
+      versionCode: grantForm.versionCode,
+      durationDays: grantForm.durationDays,
+      remark: grantForm.remark.trim() || null,
+      quotaOverrides: grantForm.enableOverride
         ? {
-            maxMembers: versionForm.maxMembers,
-            maxEmployees: versionForm.maxEmployees,
-            maxCampuses: versionForm.maxCampuses,
-            features: {
-              leadTrace: versionForm.leadTrace,
-              batchImportExport: versionForm.batchImportExport,
-            },
+            maxMembers: grantForm.maxMembers,
+            maxEmployees: grantForm.maxEmployees,
+            maxCampuses: grantForm.maxCampuses,
+            features: { ...grantForm.featureSwitches },
           }
         : undefined,
     });
-    versionModalOpen.value = false;
-    const overLimit: OverLimitResult | undefined = result?.overLimit;
-    if (overLimit?.overLimit) {
-      overLimitNotice.value = {
-        members: overLimit.members,
-        employees: overLimit.employees,
-        campuses: overLimit.campuses,
-        name: versionTarget.value.name,
-      };
-      message.warning(
-        '版本已调整，但降配后存在存量超出：已保留存量数据，禁止新增',
-      );
-    } else {
-      message.success('版本已调整并立即生效');
-    }
+    grantModalOpen.value = false;
+    message.success('权益已发放（续期 + 升档）');
     await fetchOrganizations();
+  } catch (error) {
+    return Promise.reject(error);
   } finally {
-    versionSubmitting.value = false;
+    grantSubmitting.value = false;
   }
 }
 
@@ -338,16 +425,31 @@ async function handleToggleIsTest(record: OrganizationItem, isTest: boolean) {
   await fetchOrganizations();
 }
 
-async function handleDissolve(record: OrganizationItem) {
-  const ok = await confirmAction({
-    content: `解散测试机构「${record.name}」？将永久删除该机构全部数据，不可恢复`,
-    okType: 'danger',
-    title: '确认解散机构',
-  });
-  if (!ok) return;
-  await dissolveOrganizationApi(record.id);
-  message.success(`测试机构「${record.name}」已解散，数据已删除`);
-  await fetchOrganizations();
+function openDissolveModal(record: OrganizationItem) {
+  dissolveTarget.value = record;
+  dissolveConfirmName.value = '';
+  dissolveOpen.value = true;
+}
+
+async function submitDissolve() {
+  if (!dissolveTarget.value) return Promise.reject();
+  if (dissolveConfirmName.value.trim() !== dissolveTarget.value.name) {
+    message.error('请输入完整机构名称以确认解散');
+    return Promise.reject();
+  }
+  dissolveSubmitting.value = true;
+  try {
+    await dissolveOrganizationApi(dissolveTarget.value.id);
+    message.success(
+      `测试机构「${dissolveTarget.value.name}」已解散，数据已删除`,
+    );
+    dissolveOpen.value = false;
+    await fetchOrganizations();
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    dissolveSubmitting.value = false;
+  }
 }
 
 async function handleUnbindOwner(record: OrganizationItem) {
@@ -393,11 +495,11 @@ function openExpireModal(record: OrganizationItem) {
 
 async function submitExpireAdjust() {
   if (!expireTarget.value) {
-    return;
+    return Promise.reject();
   }
   if (!expireForm.days) {
     message.warning('请填写调整天数');
-    return;
+    return Promise.reject();
   }
   expireSubmitting.value = true;
   try {
@@ -408,13 +510,15 @@ async function submitExpireAdjust() {
     message.success('有效期已调整');
     expireModalOpen.value = false;
     await fetchOrganizations();
+  } catch (error) {
+    return Promise.reject(error);
   } finally {
     expireSubmitting.value = false;
   }
 }
 
 onMounted(async () => {
-  await loadVersionDefinitions();
+  await loadCatalog();
   await fetchOrganizations();
 });
 </script>
@@ -445,8 +549,8 @@ onMounted(async () => {
           <a-select
             v-model:value="filters.versionCode"
             allow-clear
-            :options="versionOptions"
-            placeholder="全部版本"
+            :options="filterVersionOptions"
+            placeholder="全部权益档"
             style="width: 180px"
           />
         </a-form-item>
@@ -471,23 +575,6 @@ onMounted(async () => {
       </a-form>
     </template>
 
-      <a-alert
-        v-if="overLimitNotice"
-        class="mb-4"
-        closable
-        show-icon
-        type="warning"
-        @close="overLimitNotice = null"
-      >
-        <template #message>
-          机构「{{ overLimitNotice.name }}」版本调整后存量超出配额：
-          <template v-if="overLimitNotice.members">会员 </template>
-          <template v-if="overLimitNotice.employees">员工 </template>
-          <template v-if="overLimitNotice.campuses">校区 </template>
-          已超限。降配策略为「存量保留、禁止新增」，请及时调整配额或升级版本。
-        </template>
-      </a-alert>
-
       <a-table
         :columns="[
           { title: '机构名称', dataIndex: 'name' },
@@ -495,11 +582,11 @@ onMounted(async () => {
           { title: '状态', dataIndex: 'status' },
           { title: '类型', dataIndex: 'isTest' },
           { title: '版本', dataIndex: 'versionCode' },
-          { title: '会员数', dataIndex: 'usageMembers' },
-          { title: '员工数', dataIndex: 'usageEmployees' },
-          { title: '校区数', dataIndex: 'usageCampuses' },
+          { title: '会员', dataIndex: 'usageMembersText' },
+          { title: '员工', dataIndex: 'usageEmployeesText' },
+          { title: '校区', dataIndex: 'usageCampusesText' },
           { title: '到期时间', dataIndex: 'expireAt' },
-          { title: '操作', key: 'action', width: 280 },
+          { title: '操作', key: 'action', width: 300 },
         ]"
         :data-source="tableData"
         :loading="loading"
@@ -517,9 +604,12 @@ onMounted(async () => {
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'status'">
-            <a-tag :color="statusColor(record.status)">
-              {{ formatStatus(record.status) }}
-            </a-tag>
+            <a-space :size="4">
+              <a-tag :color="statusColor(record.status)">
+                {{ formatStatus(record.status) }}
+              </a-tag>
+              <a-tag v-if="record.expiredActive" color="red">已过期</a-tag>
+            </a-space>
           </template>
           <template v-else-if="column.dataIndex === 'isTest'">
             <a-tag :color="record.isTest ? 'orange' : 'default'">
@@ -532,7 +622,9 @@ onMounted(async () => {
             </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'expireAt'">
-            {{ formatDateTime(record.expireAt) }}
+            <span :class="record.expiredActive ? 'text-red-500' : ''">
+              {{ formatDateTime(record.expireAt) }}
+            </span>
           </template>
           <template v-else-if="column.key === 'action'">
             <a-space :size="4" wrap>
@@ -546,9 +638,9 @@ onMounted(async () => {
               <a-button
                 type="link"
                 size="small"
-                @click="openVersionModal(record)"
+                @click="openGrantModal(record)"
               >
-                调整版本
+                开通/续费
               </a-button>
               <template v-if="record.status === 'FROZEN'">
                 <a-popconfirm
@@ -604,7 +696,7 @@ onMounted(async () => {
                       <a-menu-item
                         v-if="isFullAdmin"
                         key="dissolve"
-                        @click="handleDissolve(record)"
+                        @click="openDissolveModal(record)"
                       >
                         解散
                       </a-menu-item>
@@ -618,28 +710,41 @@ onMounted(async () => {
       </a-table>
   </OperationTablePage>
 
-    <!-- 调整版本弹窗 -->
+    <!-- 开通/续费弹窗 -->
     <a-modal
-      v-model:open="versionModalOpen"
-      title="调整机构版本 / 配额"
-      ok-text="保存并生效"
+      v-model:open="grantModalOpen"
+      title="开通 / 续费机构权益"
+      ok-text="确认发放"
       cancel-text="取消"
-      :confirm-loading="versionSubmitting"
-      @ok="submitVersionChange"
+      :confirm-loading="grantSubmitting"
+      width="640px"
+      @ok="submitGrantEntitlement"
     >
       <a-form layout="vertical">
-        <a-form-item v-if="versionTarget" label="当前版本">
-          <a-tag :color="versionColor(versionTarget.versionCode)">
-            {{ formatVersion(versionTarget.versionCode) }}
+        <a-form-item v-if="grantTarget" label="当前版本">
+          <a-tag :color="versionColor(grantTarget.versionCode)">
+            {{ formatVersion(grantTarget.versionCode) }}
           </a-tag>
         </a-form-item>
-        <a-form-item label="目标版本" required>
+        <a-form-item label="目标权益档" required>
           <a-select
-            v-model:value="versionForm.versionCode"
+            v-model:value="grantForm.versionCode"
             :options="versionOptions"
-            placeholder="请选择套餐（含 FREE）"
-            @change="handleVersionCodeChange"
+            placeholder="仅权益档（不含年限 SKU）"
+            @change="handleGrantVersionChange"
           />
+        </a-form-item>
+        <a-form-item label="时长（天）" required>
+          <a-input-number
+            v-model:value="grantForm.durationDays"
+            :min="1"
+            :max="3650"
+            :precision="0"
+            style="width: 200px"
+          />
+          <div class="mt-1 text-[13px] text-[var(--ant-color-text-secondary)]">
+            试用默认 14 天，其余默认取档位时长或 365 天
+          </div>
         </a-form-item>
         <a-alert
           v-if="selectedVersionDefaults"
@@ -652,31 +757,28 @@ onMounted(async () => {
               selectedVersionDefaults.code
             }}）： 会员 {{ selectedVersionDefaults.maxMembers }} / 员工
             {{ selectedVersionDefaults.maxEmployees }} / 校区
-            {{ selectedVersionDefaults.maxCampuses }}； 线索溯源
-            {{
-              featureLabel(
-                selectedVersionDefaults.features?.leadTrace ?? false,
-              )
-            }}， 批量导入导出
-            {{
-              featureLabel(
-                selectedVersionDefaults.features?.batchImportExport ?? false,
-              )
-            }}
+            {{ selectedVersionDefaults.maxCampuses }}
           </template>
         </a-alert>
+        <a-form-item label="备注">
+          <a-input
+            v-model:value="grantForm.remark"
+            :maxlength="200"
+            placeholder="选填"
+          />
+        </a-form-item>
         <a-form-item>
-          <a-switch v-model:checked="versionForm.enableOverride" />
+          <a-switch v-model:checked="grantForm.enableOverride" />
           <span class="ml-2 text-[13px] text-[var(--ant-color-text-secondary)]">
-            自定义配额覆盖（不开启则使用目标版本默认配额）
+            自定义配额覆盖（不开启则使用目标权益档默认配额）
           </span>
         </a-form-item>
-        <template v-if="versionForm.enableOverride">
+        <template v-if="grantForm.enableOverride">
           <a-row :gutter="16">
             <a-col :span="8">
               <a-form-item label="会员数上限">
                 <a-input-number
-                  v-model:value="versionForm.maxMembers"
+                  v-model:value="grantForm.maxMembers"
                   :min="0"
                   :precision="0"
                   style="width: 100%"
@@ -686,7 +788,7 @@ onMounted(async () => {
             <a-col :span="8">
               <a-form-item label="员工数上限">
                 <a-input-number
-                  v-model:value="versionForm.maxEmployees"
+                  v-model:value="grantForm.maxEmployees"
                   :min="0"
                   :precision="0"
                   style="width: 100%"
@@ -696,7 +798,7 @@ onMounted(async () => {
             <a-col :span="8">
               <a-form-item label="校区数上限">
                 <a-input-number
-                  v-model:value="versionForm.maxCampuses"
+                  v-model:value="grantForm.maxCampuses"
                   :min="1"
                   :precision="0"
                   style="width: 100%"
@@ -705,30 +807,27 @@ onMounted(async () => {
             </a-col>
           </a-row>
           <a-form-item label="功能开关">
-            <a-space :size="24">
-              <span>
+            <a-space :size="16" wrap>
+              <span
+                v-for="mod in activeFeatureModules"
+                :key="mod.code"
+                class="inline-flex items-center"
+              >
                 <a-switch
-                  v-model:checked="versionForm.leadTrace"
+                  v-model:checked="grantForm.featureSwitches[mod.code]"
                   size="small"
                 />
-                <span class="ml-2">线索溯源</span>
+                <span class="ml-2">{{ mod.name }}</span>
               </span>
-              <span>
-                <a-switch
-                  v-model:checked="versionForm.batchImportExport"
-                  size="small"
-                />
-                <span class="ml-2">批量导入导出</span>
+              <span
+                v-if="activeFeatureModules.length === 0"
+                class="text-[13px] text-[var(--ant-color-text-secondary)]"
+              >
+                暂无功能模块目录
               </span>
             </a-space>
           </a-form-item>
         </template>
-        <a-alert
-          v-if="versionForm.enableOverride"
-          show-icon
-          type="info"
-          message="自定义覆盖仅影响该机构；如需全局调整请到「套餐限额」修改默认配额与功能开关"
-        />
       </a-form>
     </a-modal>
 
@@ -825,14 +924,23 @@ onMounted(async () => {
             </div>
           </a-card>
           <a-descriptions :column="2" bordered size="small">
-            <a-descriptions-item label="线索溯源">
-              {{ featureLabel(quotaDetail.features?.leadTrace ?? false) }}
+            <a-descriptions-item
+              v-for="mod in activeFeatureModules"
+              :key="mod.code"
+              :label="mod.name"
+            >
+              {{ featureLabel(quotaDetail.features?.[mod.code] ?? false) }}
             </a-descriptions-item>
-            <a-descriptions-item label="批量导入导出">
-              {{
-                featureLabel(quotaDetail.features?.batchImportExport ?? false)
-              }}
-            </a-descriptions-item>
+            <template v-if="activeFeatureModules.length === 0">
+              <a-descriptions-item label="线索溯源">
+                {{ featureLabel(quotaDetail.features?.leadTrace ?? false) }}
+              </a-descriptions-item>
+              <a-descriptions-item label="批量导入导出">
+                {{
+                  featureLabel(quotaDetail.features?.batchImportExport ?? false)
+                }}
+              </a-descriptions-item>
+            </template>
           </a-descriptions>
         </template>
       </a-spin>
@@ -866,6 +974,32 @@ onMounted(async () => {
             :maxlength="500"
             :rows="3"
             placeholder="选填，将写入机构操作日志"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 解散确认：需输入机构全名 -->
+    <a-modal
+      v-model:open="dissolveOpen"
+      title="确认解散机构"
+      ok-text="确认解散"
+      ok-type="danger"
+      cancel-text="取消"
+      :confirm-loading="dissolveSubmitting"
+      @ok="submitDissolve"
+    >
+      <a-alert
+        class="mb-4"
+        show-icon
+        type="error"
+        :message="`将永久删除测试机构「${dissolveTarget?.name ?? ''}」全部数据，不可恢复。`"
+      />
+      <a-form layout="vertical">
+        <a-form-item :label="`请输入机构名称「${dissolveTarget?.name ?? ''}」以确认`">
+          <a-input
+            v-model:value="dissolveConfirmName"
+            placeholder="输入完整机构名称"
           />
         </a-form-item>
       </a-form>

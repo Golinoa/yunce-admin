@@ -63,6 +63,8 @@ const banners = ref<BannerItem[]>([]);
 const activities = ref<ActivityItem[]>([]);
 const bannerOpen = ref(false);
 const activityOpen = ref(false);
+const bannerSubmitting = ref(false);
+const activitySubmitting = ref(false);
 const editingBannerId = ref('');
 const editingActivityId = ref('');
 
@@ -140,7 +142,7 @@ function openCreateActivityModal() {
 async function handleCreateBanner() {
   if (!bannerForm.title.trim() || !bannerForm.imageUrl.trim()) {
     message.error('请填写轮播图标题和图片地址');
-    return;
+    return Promise.reject();
   }
 
   const ok = await confirmAction({
@@ -149,31 +151,38 @@ async function handleCreateBanner() {
       : `确认创建轮播图「${bannerForm.title}」？`,
     title: editingBannerId.value ? '确认更新轮播图' : '确认创建轮播图',
   });
-  if (!ok) return;
+  if (!ok) return Promise.reject();
 
-  const payload = {
-    ...bannerForm,
-    jumpValue: bannerForm.jumpValue || undefined,
-  };
+  bannerSubmitting.value = true;
+  try {
+    const payload = {
+      ...bannerForm,
+      jumpValue: bannerForm.jumpValue || undefined,
+    };
 
-  if (editingBannerId.value) {
-    await updateBannerApi(editingBannerId.value, payload);
-    message.success('轮播图更新成功');
-  } else {
-    await createBannerApi(payload);
-    message.success('轮播图创建成功');
+    if (editingBannerId.value) {
+      await updateBannerApi(editingBannerId.value, payload);
+      message.success('轮播图更新成功');
+    } else {
+      await createBannerApi(payload);
+      message.success('轮播图创建成功');
+    }
+
+    bannerOpen.value = false;
+    editingBannerId.value = '';
+    resetBannerForm();
+    await fetchData();
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    bannerSubmitting.value = false;
   }
-
-  bannerOpen.value = false;
-  editingBannerId.value = '';
-  resetBannerForm();
-  await fetchData();
 }
 
 async function handleCreateActivity() {
   if (!activityForm.title.trim()) {
     message.error('请填写活动标题');
-    return;
+    return Promise.reject();
   }
 
   const ok = await confirmAction({
@@ -182,27 +191,35 @@ async function handleCreateActivity() {
       : `确认创建活动「${activityForm.title}」？`,
     title: editingActivityId.value ? '确认更新活动' : '确认创建活动',
   });
-  if (!ok) return;
-  const payload = {
-    ...activityForm,
-    content: activityForm.content || undefined,
-    coverImageUrl: activityForm.coverImageUrl || undefined,
-    jumpValue: activityForm.jumpValue || undefined,
-    summary: activityForm.summary || undefined,
-  };
+  if (!ok) return Promise.reject();
 
-  if (editingActivityId.value) {
-    await updateActivityApi(editingActivityId.value, payload);
-    message.success('活动更新成功');
-  } else {
-    await createActivityApi(payload);
-    message.success('活动创建成功');
+  activitySubmitting.value = true;
+  try {
+    const payload = {
+      ...activityForm,
+      content: activityForm.content || undefined,
+      coverImageUrl: activityForm.coverImageUrl || undefined,
+      jumpValue: activityForm.jumpValue || undefined,
+      summary: activityForm.summary || undefined,
+    };
+
+    if (editingActivityId.value) {
+      await updateActivityApi(editingActivityId.value, payload);
+      message.success('活动更新成功');
+    } else {
+      await createActivityApi(payload);
+      message.success('活动创建成功');
+    }
+
+    activityOpen.value = false;
+    editingActivityId.value = '';
+    resetActivityForm();
+    await fetchData();
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    activitySubmitting.value = false;
   }
-
-  activityOpen.value = false;
-  editingActivityId.value = '';
-  resetActivityForm();
-  await fetchData();
 }
 
 async function handleToggleBannerStatus(record: BannerItem, checked: boolean) {
@@ -336,6 +353,7 @@ function handleEditActivity(record: ActivityItem) {
     <a-modal
       v-model:open="bannerOpen"
       :title="editingBannerId ? '编辑轮播图' : '新增轮播图'"
+      :confirm-loading="bannerSubmitting"
       @ok="handleCreateBanner"
     >
       <a-form layout="vertical">
@@ -365,6 +383,7 @@ function handleEditActivity(record: ActivityItem) {
     <a-modal
       v-model:open="activityOpen"
       :title="editingActivityId ? '编辑活动' : '新增活动'"
+      :confirm-loading="activitySubmitting"
       @ok="handleCreateActivity"
     >
       <a-form layout="vertical">

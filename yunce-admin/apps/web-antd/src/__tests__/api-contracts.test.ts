@@ -32,10 +32,12 @@ import {
 import {
   approveStoreEntryApplicationApi,
   freezeOrganizationApi,
+  getFeatureModulesApi,
   getOrganizationQuotaUsageApi,
   getOrganizationsApi,
   getOrganizationVersionsApi,
   getStoreEntryApplicationsApi,
+  grantOrganizationEntitlementApi,
   rejectStoreEntryApplicationApi,
   unfreezeOrganizationApi,
 } from '#/api/core/organization';
@@ -75,7 +77,12 @@ describe('admin api contracts', () => {
     await getMembershipsApi({ page: 1 });
     expect(get).toHaveBeenCalledWith('/memberships', { params: { page: 1 } });
 
-    const grant = { userId: 'u1', planId: 'p1' };
+    const grant = {
+      profileId: 'u1',
+      planId: 'p1',
+      source: 'MANUAL' as const,
+      targetVersionCode: 'STANDARD' as const,
+    };
     await grantMembershipApi(grant);
     expect(post).toHaveBeenCalledWith('/memberships/grant', grant);
 
@@ -124,9 +131,13 @@ describe('organization api contracts', () => {
       params: { page: 1 },
     });
 
-    await approveStoreEntryApplicationApi('s1', { isTest: true });
+    await approveStoreEntryApplicationApi('s1', {
+      isTest: true,
+      grantEntitlement: { versionCode: 'TRIAL', durationDays: 14 },
+    });
     expect(post).toHaveBeenCalledWith('/store-entry/applications/s1/approve', {
       isTest: true,
+      grantEntitlement: { versionCode: 'TRIAL', durationDays: 14 },
     });
 
     await rejectStoreEntryApplicationApi('s2', { reason: 'bad' });
@@ -138,6 +149,23 @@ describe('organization api contracts', () => {
     expect(get).toHaveBeenCalledWith('/organization-versions', {
       params: undefined,
     });
+
+    await getFeatureModulesApi();
+    expect(get).toHaveBeenCalledWith('/feature-modules');
+
+    await grantOrganizationEntitlementApi('org-2', {
+      versionCode: 'STANDARD',
+      durationDays: 365,
+      remark: 'ops',
+    });
+    expect(post).toHaveBeenCalledWith(
+      '/organizations/org-2/grant-entitlement',
+      {
+        versionCode: 'STANDARD',
+        durationDays: 365,
+        remark: 'ops',
+      },
+    );
 
     await getOrganizationQuotaUsageApi('org-9');
     expect(get).toHaveBeenCalledWith('/organizations/org-9/quota-usage');

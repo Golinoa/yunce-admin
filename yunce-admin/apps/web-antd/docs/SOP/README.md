@@ -1,58 +1,7 @@
-# 管理端工程化总览（对齐后端 SOP）
+# 运营后台工程入口
 
-> 产品入口：`apps/web-antd`（运营后台）。  
-> 权威对标：`yunce-backend/docs/SOP/README.md` + `verify:sop`。  
-> 演进细则：[ENGINEERING-EVOLUTION.md](./ENGINEERING-EVOLUTION.md)
+[三端模块联调](../../../../../yunce-backend/docs/development/README.md)。唯一产品 app 为 apps/web-antd；UI 固定，后端优先兼容。
 
-## 目标状态（与后端同构）
+验证命令以 yunce-admin/package.json 为准：pnpm run check:type:antd、pnpm run verify:sop、pnpm run verify:sop:post。已有业务 Vitest 测试，不再沿用“测试为零”的旧阶段差距。
 
-```text
-1. 本地开发
-   pnpm -C yunce-admin run dev:antd  →  proxy /api/admin/v1 → backend
-
-2. 推送前质量
-   小改：按 PRE-PUSH-CHECKS 最小证据
-   大改 / 发版前：pnpm run verify:sop
-
-3. 云端只验门禁、不部署
-   git tag ci-YYYYMMDDHHMM && git push github ci-*
-
-4. 正式发版
-   vX.Y.Z → quality → 镜像 → SSH 部署 → /health
-
-5. 发版后冒烟
-   verify:sop:post（health + headers）
-```
-
-| 标签 | 流水线 | 部署 |
-|------|--------|------|
-| 普通 push `main` | 不跑 Actions（可后续加 PR 门禁） | 否 |
-| `ci-*`（兼容 `dashboard-ci-*`） | 仅质量 | **否** |
-| `vX.Y.Z`（兼容 `dashboard-v*`） | Release | **是** |
-
-## 现状差距（相对后端）
-
-| 能力 | 后端 | Admin 现状 |
-|------|------|------------|
-| 命名 verify 链 | `verify:sop` | 无，散落 typecheck/lint/build |
-| 业务测试 + 覆盖率地板 | Jest + threshold | 业务 0；仅有 Vben 包测 |
-| SOP / ADR / AGENTS | 齐备 | 缺（README 仍是上游 Vben） |
-| 范围化 pre-push | `verify:scope` | lefthook 全量 `check:type` |
-| 产品面收敛 | 单服务 | 多 UI 变体 + demos 残留 |
-| 发版后冒烟 | `verify:sop:post` | Release 仅 `/health` |
-
-## 文档清单（规划）
-
-| 文档 | 状态 |
-|------|------|
-| [README.md](./README.md) | 本入口 |
-| [ENGINEERING-EVOLUTION.md](./ENGINEERING-EVOLUTION.md) | 分期演进方案 |
-| [DEVELOPMENT-CONVENTIONS.md](./DEVELOPMENT-CONVENTIONS.md) | 开发约定 |
-| [PHASE-0-DONE.md](./PHASE-0-DONE.md) | Phase 0 完成清单 |
-| [PHASE-1-DONE.md](./PHASE-1-DONE.md) | Phase 1 完成清单 |
-| [PHASE-2-DONE.md](./PHASE-2-DONE.md) | Phase 2 完成清单 |
-| [PRE-PUSH-CHECKS.md](./PRE-PUSH-CHECKS.md) | 推送前按范围检查 |
-| [RELEASE-TEST-SOP.md](./RELEASE-TEST-SOP.md) | `ci-*` / `vX.Y.Z`（兼容旧 dashboard-*） |
-| [OPS-BLOCKERS-CLOSED.md](./OPS-BLOCKERS-CLOSED.md) | 2026-09-01 运营阻塞画布收口 |
-| AGENTS.md（web-antd 根） | 产品硬性约定 |
-| [../adr/](../adr/) | ADR-0001 ~ 0004 |
+[推送检查](PRE-PUSH-CHECKS.md) · [发布流程](RELEASE-TEST-SOP.md)。PHASE 与 ENGINEERING-EVOLUTION 文件仅记录历史工程演进，不代表本轮联调结果。

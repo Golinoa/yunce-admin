@@ -1,3 +1,5 @@
+> **松果排课产品开发入口**：[web-antd 文档](apps/web-antd/docs/README.md)。以下为上游 Vben 说明，不代表本项目开发进度；唯一产品 app 为 web-antd。
+
 <div align="center">
   <a href="https://github.com/anncwb/vue-vben-admin">
     <img alt="VbenAdmin Logo" width="215" src="https://unpkg.com/@vbenjs/static-source@0.1.7/source/logo-v1.webp">

@@ -1,3 +1,5 @@
+> **当前联调约束（2026-09-08）**：[统一模块入口](../../../yunce-backend/docs/development/README.md)。全模块验收；前端 UI 固定，后端优先兼容前端。问题和冲突进统一台账，历史进度数字不代表当前验收。
+
 # 松果排课运营后台（apps/web-antd）— AI / 工程硬性约定
 
 > 对齐 `yunce-backend/AGENTS.md` 精神；产品工程化权威入口见 `docs/SOP/README.md`。

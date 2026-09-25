@@ -25,9 +25,10 @@ pnpm run build:antd          # 仅构建前端
 
 ## 生产发布（CI/CD）
 
-> 本地 git 根目录是 **`yunce-back/`**（对应 Gitee/GitHub 的 `yunce-admin` 仓）。  
+> 本地 git 根目录是 **`yunce-back/`**（对应 GitHub 的 `yunce-admin` 仓）。  
 > Workflow 在 **`.github/workflows/`**（仓库根），Docker context 为 `yunce-admin/`。  
-> GitHub 仓：https://github.com/Golinoa/yunce-admin
+> GitHub 仓：https://github.com/Golinoa/yunce-admin  
+> 远程名：**`github`**（本仓不再使用 Gitee，远程 `origin` 已移除，勿再执行 `git push origin …`）
 
 1. 在 [GitHub Secrets](https://github.com/Golinoa/yunce-admin/settings/secrets/actions) 配置（与 backend 相同）：
    - `ACR_NAMESPACE`
@@ -35,14 +36,13 @@ pnpm run build:antd          # 仅构建前端
    - `SERVER_HOST` / `SERVER_USERNAME` / `SERVER_SSH_KEY`
    - `VITE_APP_STORE_SECURE_KEY`（≥16，禁止占位串）
 
-2. 双远程推送 + 打 tag 发版：
+2. 推送 + 打 tag 发版：
 
 ```bash
 cd yunce-back   # git 根目录
 
-# 日常同步
-git push origin main       # Gitee
-git push github main       # GitHub
+# 日常同步（仅 GitHub）
+git push github main
 
 # 发版运营后台（推荐 v 前缀）
 git tag -a v1.0.12 -m "release dashboard v1.0.12"
